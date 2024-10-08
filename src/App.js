@@ -157,7 +157,7 @@ function App() {
       // Center the camera after dragging
       centerCamera();
     }
-  }, [isDragging, isCameraDragging, showGhost, absoluteRectanglePosition.y, viewportState]);
+  }, [isDragging, isCameraDragging, showGhost, absoluteRectanglePosition.y, viewportState, centerCamera]);
 
   // Spring animation for the rectangle
   const rectangleProps = useSpring({
@@ -208,9 +208,6 @@ function App() {
   // Spring animation for zooming
   const zoomProps = useSpring({ zoom });
 
-  // Utility function to format numbers with different number of decimal
-  const formatNumber = (value) => +parseFloat(value).toFixed(0);
-
   useEffect(() => {
     setPositionState((prev) => ({
       ...prev,
@@ -219,30 +216,10 @@ function App() {
         y: getRelativePosition(absoluteRectanglePosition).y * zoom - viewportState.cameraPosition.y,
       },
     }));
-  }, [absoluteRectanglePosition, zoom, viewportState.cameraPosition]);
+  }, [absoluteRectanglePosition, zoom, viewportState.cameraPosition, getRelativePosition]);
 
   return (
     <div className="App" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-
-      {/* Debug Information Display */}
-      <div style={{
-        position: 'fixed',
-        top: '10px',
-        left: '10px',
-        fontSize: '16px',
-        color: 'black',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        padding: '10px',
-        borderRadius: '5px',
-        zIndex: 1000,
-      }}>
-        <div>Mouse Position: {`x: ${formatNumber(positionState.mousePosition.x)}, y: ${formatNumber(positionState.mousePosition.y)}`}</div>
-        <div>Rectangle Position: {`x: ${formatNumber(getRelativePosition(absoluteRectanglePosition).x)}, y: ${formatNumber(getRelativePosition(absoluteRectanglePosition).y)}`}</div>
-        <div>Rectangle Absolute Position: {`x: ${formatNumber(absoluteRectanglePosition.x)}, y: ${formatNumber(absoluteRectanglePosition.y)}`}</div>
-        <div>Window Size: {`width: ${formatNumber(viewportState.windowSize.width)}, height: ${formatNumber(viewportState.windowSize.height)}`}</div>
-        <div>Camera Position: {`x: ${formatNumber(viewportState.cameraPosition.x)}, y: ${formatNumber(viewportState.cameraPosition.y)}`}</div>
-        <div>Zoom: {zoom}</div>
-      </div>
 
       <animated.div
         className="room"
@@ -269,18 +246,6 @@ function App() {
             }}
           />
 
-          <div style={{
-            position: 'fixed',
-            top: absoluteRectanglePosition.y,
-            left: absoluteRectanglePosition.x,
-            width: '30px',
-            height: '30px',
-            borderRadius: '50%',
-            backgroundColor: 'grey',
-            zIndex: 1000,
-          }}
-          />
-
           <animated.div
             className={`rectangle ${isDragging ? 'dragging' : ''}`}
             style={{
@@ -304,48 +269,6 @@ function App() {
           )}
         </animated.div>
       </animated.div>
-
-      {/* Red circles fixed to the corners of the viewport */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        backgroundColor: 'red',
-      }}
-      />
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        backgroundColor: 'red',
-      }}
-      />
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        backgroundColor: 'red',
-      }}
-      />
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        right: 0,
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        backgroundColor: 'red',
-      }}
-      />
     </div>
   );
 }
