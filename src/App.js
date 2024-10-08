@@ -18,33 +18,60 @@ function App() {
   const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({ x: -75, y: 0 });
   const [showGhost, setShowGhost] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [, setIsScrolling] = useState(false);
-  const centerTimeoutRef = useRef(null);
+  const [isCameraDragging, setIsCameraDragging] = useState(false);
   const centerSectionRef = useRef(null);
+
+  // Auxiliar function to center the camera
+  const centerCamera = useCallback(() => {
+    setViewportState((prev) => {
+      const centerSectionTop = centerSectionRef.current?.offsetTop || 0;
+      const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0);
+
+      let newY = prev.cameraPosition.y;
+
+      if (prev.cameraPosition.y < centerSectionTop - prev.windowSize.height / 4) {
+        newY = centerSectionTop - prev.windowSize.height / 4;
+      } else if (prev.cameraPosition.y > centerSectionBottom - 3 * prev.windowSize.height / 4) {
+        newY = centerSectionBottom - 3 * prev.windowSize.height / 4;
+      }
+
+      return {
+        ...prev,
+        cameraPosition: {
+          x: -prev.windowSize.width / 2,
+          y: newY,
+        },
+      };
+    });
+  }, []);
 
   // Update window size on resize
   useEffect(() => {
     const handleResize = () => {
       const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
+
       setViewportState((prev) => ({
         ...prev,
         windowSize: { width: newWidth, height: newHeight },
-        cameraPosition: {
-          x: newWidth / 2,
-          y: newHeight / 2,
-        },
       }));
+
+      setIsCameraDragging(false);
+      document.body.style.cursor = 'default';
+
+      // Center the camera after resizing the window
+      centerCamera();
     };
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [centerCamera]);
 
   // Get the relative position of an absolute position for the rectangle
   const getRelativePosition = useCallback(
     (absolutePos) => ({
       x: viewportState.cameraPosition.x + absolutePos.x + (centerSectionRef.current ? centerSectionRef.current.style.x - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
-      y: viewportState.cameraPosition.y + absolutePos.y + (centerSectionRef.current ? centerSectionRef.current.style.y - viewportState.cameraPosition.y : viewportState.windowSize.height / 2),
+      y: viewportState.cameraPosition.y + absolutePos.y + (centerSectionRef.current ? centerSectionRef.current.style.y - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
     }),
     [viewportState]
   );
@@ -53,16 +80,30 @@ function App() {
   useEffect(() => {
     const handleMouseMove = (event) => {
       if (isDragging) {
+        // Dragging the rectangle
         const newMousePosition = { x: event.clientX, y: event.clientY };
         setPositionState((prev) => ({
           ...prev,
           mousePosition: newMousePosition,
         }));
         const newAbsolutePosition = {
-          x: (newMousePosition.x - positionState.offset.x) / zoom - viewportState.windowSize.width / 2,
-          y: (newMousePosition.y - positionState.offset.y) / zoom - viewportState.windowSize.height / 2,
+          x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? centerSectionRef.current.style.x - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
+          y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? centerSectionRef.current.style.y - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
         };
         setAbsoluteRectanglePosition(newAbsolutePosition);
+      } else if (isCameraDragging) {
+        // Dragging the camera
+        setViewportState((prev) => ({
+          ...prev,
+          cameraPosition: {
+            x: prev.cameraPosition.x - (event.clientX - positionState.offset.x) / zoom,
+            y: prev.cameraPosition.y - (event.clientY - positionState.offset.y) / zoom,
+          },
+        }));
+        setPositionState((prev) => ({
+          ...prev,
+          offset: { x: event.clientX, y: event.clientY },
+        }));
       }
     };
 
@@ -70,34 +111,53 @@ function App() {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [isDragging, positionState.offset, zoom, viewportState]);
+  }, [isDragging, isCameraDragging, positionState.offset, zoom, viewportState]);
 
   // Handle mouse down to start dragging
   const handleMouseDown = useCallback((event) => {
     event.preventDefault();
-    setIsDragging(true);
-    document.body.style.cursor = 'grabbing';
+    if (event.target.classList.contains('rectangle')) {
+      // Dragging rectangle
+      setIsDragging(true);
+      document.body.style.cursor = 'grabbing';
 
-    const relativeRectPos = getRelativePosition(absoluteRectanglePosition);
-    setPositionState((prev) => ({
-      ...prev,
-      offset: {
-        x: event.clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
-        y: event.clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
-      },
-    }));
+      const relativeRectPos = getRelativePosition(absoluteRectanglePosition);
+      setPositionState((prev) => ({
+        ...prev,
+        offset: {
+          x: event.clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
+          y: event.clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
+        },
+      }));
+    } else {
+      // Dragging camera
+      setIsCameraDragging(true);
+      document.body.style.cursor = 'grabbing';
+      setPositionState((prev) => ({
+        ...prev,
+        offset: { x: event.clientX, y: event.clientY },
+      }));
+    }
   }, [absoluteRectanglePosition, getRelativePosition, viewportState.cameraPosition, zoom]);
 
   // Handle mouse up to stop dragging
   const handleMouseUp = useCallback((event) => {
     event.preventDefault();
-    setIsDragging(false);
-    document.body.style.cursor = 'default';
-    if (showGhost) {
-      const snappedY = Math.round(absoluteRectanglePosition.y / 100) * 100;
-      setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
+    if (isDragging) {
+      setIsDragging(false);
+      document.body.style.cursor = 'default';
+      if (showGhost) {
+        const snappedY = Math.round(absoluteRectanglePosition.y / 100) * 100;
+        setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
+      }
+    } else if (isCameraDragging) {
+      setIsCameraDragging(false);
+      document.body.style.cursor = 'default';
+
+      // Center the camera after dragging
+      centerCamera();
     }
-  }, [absoluteRectanglePosition.y, showGhost, viewportState]);
+  }, [isDragging, isCameraDragging, showGhost, absoluteRectanglePosition.y, viewportState]);
 
   // Spring animation for the rectangle
   const rectangleProps = useSpring({
@@ -126,50 +186,6 @@ function App() {
   // Handle zooming
   const handleZoom = useCallback((delta) => {
     setZoom((prevZoom) => Math.max(0.1, Math.min(prevZoom + delta, 5)));
-  }, []);
-
-  // Move and center camera
-  const handleWheel = useCallback((event) => {
-    if (event.ctrlKey) {
-      event.preventDefault();
-      const delta = event.deltaY * -0.01;
-      handleZoom(delta);
-    } else {
-      setIsScrolling(true);
-      setViewportState((prev) => ({
-        ...prev,
-        cameraPosition: {
-          x: prev.cameraPosition.x - event.deltaX / zoom,
-          y: prev.cameraPosition.y - event.deltaY / zoom,
-        },
-      }));
-
-      // Clear any existing timeout
-      if (centerTimeoutRef.current) {
-        clearTimeout(centerTimeoutRef.current);
-      }
-
-      // Set a new timeout to center the camera
-      centerTimeoutRef.current = setTimeout(() => {
-        setViewportState((prev) => ({
-          ...prev,
-          cameraPosition: {
-            x: -prev.windowSize.width / 2,
-            y: -prev.windowSize.height / 2,
-          },
-        }));
-        setIsScrolling(false);
-      }, 100);
-    }
-  }, [handleZoom, zoom]);
-
-  // Clean up the timeout on component unmount
-  useEffect(() => {
-    return () => {
-      if (centerTimeoutRef.current) {
-        clearTimeout(centerTimeoutRef.current);
-      }
-    };
   }, []);
 
   // Handle keyboard events for Ctrl++/Ctrl+- zooming
@@ -206,7 +222,7 @@ function App() {
   }, [absoluteRectanglePosition, zoom, viewportState.cameraPosition]);
 
   return (
-    <div className="App" onMouseUp={handleMouseUp} onWheel={handleWheel}>
+    <div className="App" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
 
       {/* Debug Information Display */}
       <div style={{
@@ -248,7 +264,7 @@ function App() {
             style={{
               left: 0,
               top: 0,
-              transform: `translate(-50%, -50%)`,
+              transform: `translate(-50%, 0%)`,
               position: 'absolute',
             }}
           />
@@ -274,7 +290,6 @@ function App() {
               }),
               position: 'absolute',
             }}
-            onMouseDown={handleMouseDown}
           />
 
           {showGhost && (
