@@ -24,15 +24,15 @@ function App() {
   // Auxiliar function to center the camera
   const centerCamera = useCallback(() => {
     setViewportState((prev) => {
-      const centerSectionTop = centerSectionRef.current?.offsetTop || 0;
-      const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0);
+      const centerSectionTop = centerSectionRef.current?.offsetTop - prev.windowSize.height / 5 || 0;
+      const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0) + prev.windowSize.height / 5;
 
       let newY = prev.cameraPosition.y;
 
       if (prev.cameraPosition.y < centerSectionTop - prev.windowSize.height / 4) {
         newY = centerSectionTop - prev.windowSize.height / 4;
-      } else if (prev.cameraPosition.y > centerSectionBottom - 3 * prev.windowSize.height / 4) {
-        newY = centerSectionBottom - 3 * prev.windowSize.height / 4;
+      } else if (prev.cameraPosition.y > centerSectionBottom - prev.windowSize.height / 2) {
+        newY = centerSectionBottom - prev.windowSize.height / 2;
       }
 
       return {
