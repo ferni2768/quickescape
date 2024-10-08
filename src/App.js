@@ -1,84 +1,47 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import './App.css';
+import { useCamera } from './hooks/useCamera';
 
 function App() {
+  const [isDragging, setIsDragging] = useState(false);
+  const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({ x: -75, y: 0 });
+  const [showGhost, setShowGhost] = useState(false);
 
   const [positionState, setPositionState] = useState({
     mousePosition: { x: 0, y: 0 },
     offset: { x: 0, y: 0 }
   });
 
-  const [viewportState, setViewportState] = useState({
-    windowSize: { width: window.innerWidth, height: window.innerHeight },
-    cameraPosition: { x: -window.innerWidth / 2, y: -window.innerHeight / 2 },
+  const {
+    viewportState,
+    centerSectionRef,
+    handleMouseMove,
+    handleMouseDownCamera,
+    handleMouseUpCamera,
+    cameraProps,
+    zoomProps,
+    zoom,
+    isCameraDragging
+  } = useCamera();
+
+  const rectangleProps = useSpring({
+    x: absoluteRectanglePosition.x,
+    y: absoluteRectanglePosition.y,
+    config: { mass: 1, tension: 170, friction: 26 },
   });
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({ x: -75, y: 0 });
-  const [showGhost, setShowGhost] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [isCameraDragging, setIsCameraDragging] = useState(false);
-  const centerSectionRef = useRef(null);
-
-  // Auxiliar function to center the camera
-  const centerCamera = useCallback(() => {
-    setViewportState((prev) => {
-      const centerSectionTop = centerSectionRef.current?.offsetTop - prev.windowSize.height / 5 || 0;
-      const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0) + prev.windowSize.height / 5;
-
-      let newY = prev.cameraPosition.y;
-
-      if (prev.cameraPosition.y < centerSectionTop - prev.windowSize.height / 4) {
-        newY = centerSectionTop - prev.windowSize.height / 4;
-      } else if (prev.cameraPosition.y > centerSectionBottom - prev.windowSize.height / 2) {
-        newY = centerSectionBottom - prev.windowSize.height / 2;
-      }
-
-      return {
-        ...prev,
-        cameraPosition: {
-          x: -prev.windowSize.width / 2,
-          y: newY,
-        },
-      };
-    });
-  }, []);
-
-  // Update window size on resize
-  useEffect(() => {
-    const handleResize = () => {
-      const newWidth = window.innerWidth;
-      const newHeight = window.innerHeight;
-
-      setViewportState((prev) => ({
-        ...prev,
-        windowSize: { width: newWidth, height: newHeight },
-      }));
-
-      setIsCameraDragging(false);
-      document.body.style.cursor = 'default';
-
-      // Center the camera after resizing the window
-      centerCamera();
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [centerCamera]);
-
-  // Get the relative position of an absolute position for the rectangle
   const getRelativePosition = useCallback(
     (absolutePos) => ({
       x: viewportState.cameraPosition.x + absolutePos.x + (centerSectionRef.current ? centerSectionRef.current.style.x - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
       y: viewportState.cameraPosition.y + absolutePos.y + (centerSectionRef.current ? centerSectionRef.current.style.y - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
     }),
-    [viewportState]
+    [viewportState, centerSectionRef]
   );
 
   // Update mouse position on mouse move
   useEffect(() => {
-    const handleMouseMove = (event) => {
+    const handleMouseMoveWrapper = (event) => {
       if (isDragging) {
         // Dragging the rectangle
         const newMousePosition = { x: event.clientX, y: event.clientY };
@@ -91,27 +54,16 @@ function App() {
           y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? centerSectionRef.current.style.y - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
         };
         setAbsoluteRectanglePosition(newAbsolutePosition);
-      } else if (isCameraDragging) {
-        // Dragging the camera
-        setViewportState((prev) => ({
-          ...prev,
-          cameraPosition: {
-            x: prev.cameraPosition.x - (event.clientX - positionState.offset.x) / zoom,
-            y: prev.cameraPosition.y - (event.clientY - positionState.offset.y) / zoom,
-          },
-        }));
-        setPositionState((prev) => ({
-          ...prev,
-          offset: { x: event.clientX, y: event.clientY },
-        }));
+      } else {
+        handleMouseMove(event, positionState, setPositionState, zoom);
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMoveWrapper);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleMouseMoveWrapper);
     };
-  }, [isDragging, isCameraDragging, positionState.offset, zoom, viewportState]);
+  }, [isDragging, handleMouseMove, positionState, zoom, viewportState, centerSectionRef]);
 
   // Handle mouse down to start dragging
   const handleMouseDown = useCallback((event) => {
@@ -130,15 +82,10 @@ function App() {
         },
       }));
     } else {
-      // Dragging camera
-      setIsCameraDragging(true);
-      document.body.style.cursor = 'grabbing';
-      setPositionState((prev) => ({
-        ...prev,
-        offset: { x: event.clientX, y: event.clientY },
-      }));
+      // Arrastrar la cámara
+      handleMouseDownCamera(event, setPositionState);
     }
-  }, [absoluteRectanglePosition, getRelativePosition, viewportState.cameraPosition, zoom]);
+  }, [absoluteRectanglePosition, getRelativePosition, viewportState.cameraPosition, zoom, handleMouseDownCamera]);
 
   // Handle mouse up to stop dragging
   const handleMouseUp = useCallback((event) => {
@@ -151,28 +98,12 @@ function App() {
         setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
       }
     } else if (isCameraDragging) {
-      setIsCameraDragging(false);
-      document.body.style.cursor = 'default';
-
       // Center the camera after dragging
-      centerCamera();
+      handleMouseUpCamera();
     }
-  }, [isDragging, isCameraDragging, showGhost, absoluteRectanglePosition.y, viewportState, centerCamera]);
+  }, [isDragging, isCameraDragging, showGhost, absoluteRectanglePosition.y, viewportState]);
 
-  // Spring animation for the rectangle
-  const rectangleProps = useSpring({
-    x: absoluteRectanglePosition.x,
-    y: absoluteRectanglePosition.y,
-    config: { mass: 1, tension: 170, friction: 26 },
-  });
-
-  // Spring animation for the camera
-  const cameraProps = useSpring({
-    to: { x: viewportState.cameraPosition.x, y: viewportState.cameraPosition.y },
-    config: { mass: 1, tension: 170, friction: 26 },
-  });
-
-  // Check if rectangle is over the snapping section
+  // Show ghost when rectangle is in the center section
   useEffect(() => {
     const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 250;
     const centerSectionEnd = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 + 100;
@@ -183,31 +114,7 @@ function App() {
     }
   }, [absoluteRectanglePosition, viewportState]);
 
-  // Handle zooming
-  const handleZoom = useCallback((delta) => {
-    setZoom((prevZoom) => Math.max(0.1, Math.min(prevZoom + delta, 5)));
-  }, []);
-
-  // Handle keyboard events for Ctrl++/Ctrl+- zooming
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.ctrlKey) {
-        if (event.key === '+' || event.key === '=') {
-          event.preventDefault();
-          handleZoom(0.1);
-        } else if (event.key === '-') {
-          event.preventDefault();
-          handleZoom(-0.1);
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleZoom]);
-
-  // Spring animation for zooming
-  const zoomProps = useSpring({ zoom });
-
+  // Update rectangle position when zooming
   useEffect(() => {
     setPositionState((prev) => ({
       ...prev,
