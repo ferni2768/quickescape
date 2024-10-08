@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function useCamera() {
-
-    const [isCameraDragging, setIsCameraDragging] = useState(false);
+export function Camera() {
     const [zoom, setZoom] = useState(1);
+    const [isCameraDragging, setIsCameraDragging] = useState(false);
     const centerSectionRef = useRef(null);
 
     const [viewportState, setViewportState] = useState({
@@ -22,8 +21,8 @@ export function useCamera() {
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
         setViewportState((prev) => {
-            const centerSectionTop = centerSectionRef.current?.offsetTop - prev.windowSize.height / 5 || 0;
-            const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0) + prev.windowSize.height / 5;
+            const centerSectionTop = centerSectionRef.current?.offsetTop || 0;
+            const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0);
 
             let newY = prev.cameraPosition.y;
 
@@ -41,7 +40,7 @@ export function useCamera() {
                 },
             };
         });
-    }, []);
+    }, [centerSectionRef]);
 
     // Update window size on resize
     useEffect(() => {
@@ -65,7 +64,7 @@ export function useCamera() {
     }, [centerCamera]);
 
     // Update camera position on mouse move
-    const handleMouseMove = useCallback((event, positionState, setPositionState, zoom) => {
+    const handleMouseMoveCamera = useCallback((event, positionState, setPositionState, zoom) => {
         if (isCameraDragging) {
             setViewportState((prev) => ({
                 ...prev,
@@ -79,11 +78,10 @@ export function useCamera() {
                 offset: { x: event.clientX, y: event.clientY },
             }));
         }
-    }, [isCameraDragging]);
+    }, [isCameraDragging, zoom]);
 
     // Handle mouse down to start dragging the camera
     const handleMouseDownCamera = useCallback((event, setPositionState) => {
-        event.preventDefault();
         setIsCameraDragging(true);
         document.body.style.cursor = 'grabbing';
         setPositionState((prev) => ({
@@ -124,7 +122,7 @@ export function useCamera() {
     return {
         viewportState,
         centerSectionRef,
-        handleMouseMove,
+        handleMouseMoveCamera,
         handleMouseDownCamera,
         handleMouseUpCamera,
         cameraProps,
