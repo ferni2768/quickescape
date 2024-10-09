@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Rectangle(viewportState, zoom, centerSectionRef) {
+export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition) {
     const [isDragging, setIsDragging] = useState(false);
-    const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({ x: -75, y: 0 });
+    const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({
+        x: initialPosition.x,
+        y: initialPosition.y,
+    });
     const [showGhost, setShowGhost] = useState(false);
 
     const rectangleProps = useSpring({
@@ -30,8 +33,8 @@ export function Rectangle(viewportState, zoom, centerSectionRef) {
         [viewportState, centerSectionRef]
     );
 
-    // Handle mouse move to drag the rectangle
-    const handleMouseMoveRectangle = useCallback((event, positionState, setPositionState, zoom) => {
+    // Handle mouse move for the rectangle to update its position
+    const handleMouseMoveRectangle = useCallback((event) => {
         if (isDragging) {
             const newMousePosition = { x: event.clientX, y: event.clientY };
             setPositionState((prev) => ({
@@ -44,10 +47,10 @@ export function Rectangle(viewportState, zoom, centerSectionRef) {
             };
             setAbsoluteRectanglePosition(newAbsolutePosition);
         }
-    }, [isDragging, centerSectionRef, viewportState, zoom]);
+    }, [isDragging, centerSectionRef, viewportState, zoom, positionState]);
 
     // Handle mouse down for the rectangle to start dragging
-    const handleMouseDownRectangle = useCallback((event, setPositionState) => {
+    const handleMouseDownRectangle = useCallback((event) => {
         setIsDragging(true);
         document.body.style.cursor = 'grabbing';
 
@@ -102,7 +105,7 @@ export function Rectangle(viewportState, zoom, centerSectionRef) {
         handleMouseMoveRectangle,
         getRelativePosition,
         showGhost,
-        absoluteRectanglePosition,
-        isDragging
+        isDragging,
+        absoluteRectanglePosition
     };
 }

@@ -16,13 +16,18 @@ export function Camera() {
         config: { mass: 1, tension: 170, friction: 26 },
     });
 
+    const [positionState, setPositionState] = useState({
+        mousePosition: { x: 0, y: 0 },
+        offset: { x: 0, y: 0 }
+    });
+
     const zoomProps = useSpring({ zoom });
 
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
         setViewportState((prev) => {
-            const centerSectionTop = centerSectionRef.current?.offsetTop || 0;
-            const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0);
+            const centerSectionTop = centerSectionRef.current?.offsetTop - prev.windowSize.height / 5 || 0;
+            const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0) + prev.windowSize.height / 5;
 
             let newY = prev.cameraPosition.y;
 
@@ -78,7 +83,7 @@ export function Camera() {
                 offset: { x: event.clientX, y: event.clientY },
             }));
         }
-    }, [isCameraDragging, zoom]);
+    }, [isCameraDragging]);
 
     // Handle mouse down to start dragging the camera
     const handleMouseDownCamera = useCallback((event, setPositionState) => {
@@ -91,9 +96,14 @@ export function Camera() {
     }, []);
 
     // Handle mouse up to stop dragging the camera
-    const handleMouseUpCamera = useCallback(() => {
+    const handleMouseUpCamera = useCallback((positionState, setPositionState) => {
         setIsCameraDragging(false);
         document.body.style.cursor = 'default';
+        setPositionState(prev => ({
+            ...prev,
+            mousePosition: { x: 0, y: 0 },
+            offset: { x: 0, y: 0 }
+        }));
         centerCamera();
     }, [centerCamera]);
 
@@ -129,5 +139,7 @@ export function Camera() {
         zoomProps,
         zoom,
         isCameraDragging,
+        positionState,
+        setPositionState
     };
 }
