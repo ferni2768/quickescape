@@ -1,17 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition) {
+export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition, adjustedMousePosition) {
     const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+
     const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({
         x: initialPosition.x,
         y: initialPosition.y,
     });
+
+    const [height, setHeight] = useState(initialPosition.height || 50);
     const [showGhost, setShowGhost] = useState(false);
 
     const rectangleProps = useSpring({
         x: absoluteRectanglePosition.x,
         y: absoluteRectanglePosition.y,
+        height: height,
         config: { mass: 1, tension: 170, friction: 26 },
     });
 
@@ -46,27 +51,45 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
                 y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
             };
             setAbsoluteRectanglePosition(newAbsolutePosition);
+        } else if (isResizing) {
+            const newY = event.clientY - positionState.offset.y;
+            const newHeight = Math.max(20, Math.min(300, newY - absoluteRectanglePosition.y));
+            setHeight(newHeight);
         }
-    }, [isDragging, centerSectionRef, viewportState, zoom, positionState]);
+    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing]);
 
-    // Handle mouse down for the rectangle to start dragging
+    // Handle mouse down for the rectangle to start dragging or resizing
     const handleMouseDownRectangle = useCallback((event) => {
-        setIsDragging(true);
-        document.body.style.cursor = 'grabbing';
+        const currentRectBottom = absoluteRectanglePosition.y + height;
 
-        const relativeRectPos = getRelativePosition(absoluteRectanglePosition);
-        setPositionState((prev) => ({
-            ...prev,
-            offset: {
-                x: event.clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
-                y: event.clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
-            },
-        }));
-    }, [getRelativePosition, absoluteRectanglePosition, viewportState, zoom]);
+        if (adjustedMousePosition >= currentRectBottom - 15 && adjustedMousePosition <= currentRectBottom) {
+            setIsResizing(true);
+            document.body.style.cursor = 'ns-resize';
+            setPositionState((prev) => ({
+                ...prev,
+                offset: {
+                    x: event.clientX - absoluteRectanglePosition.x,
+                    y: event.clientY - currentRectBottom,
+                },
+            }));
+        } else {
+            setIsDragging(true);
+            document.body.style.cursor = 'grabbing';
+            const relativeRectPos = getRelativePosition(absoluteRectanglePosition);
+            setPositionState((prev) => ({
+                ...prev,
+                offset: {
+                    x: event.clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
+                    y: event.clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
+                },
+            }));
+        }
+    }, [getRelativePosition, absoluteRectanglePosition, viewportState, zoom, height, adjustedMousePosition]);
 
     // Handle mouse up for the rectangle to stop dragging
     const handleMouseUpRectangle = useCallback(() => {
         setIsDragging(false);
+        setIsResizing(false);
         document.body.style.cursor = 'default';
         if (showGhost) {
             const snappedY = Math.round(absoluteRectanglePosition.y / 100) * 100;
@@ -106,6 +129,8 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
         getRelativePosition,
         showGhost,
         isDragging,
-        absoluteRectanglePosition
+        isResizing,
+        absoluteRectanglePosition,
+        height
     };
 }

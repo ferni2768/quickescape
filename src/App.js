@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { animated } from '@react-spring/web';
 import './App.css';
 import { Camera } from './components/Camera';
@@ -22,23 +22,33 @@ function App() {
 
   // Multiple rectangles with independent states
   const [rectangles,] = useState([
-    { id: 1, x: -300, y: 0 },
-    { id: 2, x: -100, y: 100 },
-    { id: 3, x: 100, y: -100 },
-    { id: 4, x: 300, y: 0 },
+    { id: 1, x: -350, y: 0, height: 50 },
+    { id: 2, x: -350, y: 100, height: 50 },
+    { id: 3, x: -350, y: 200, height: 100 },
+    { id: 4, x: -75, y: 0, height: 80 },
   ]);
 
   const [activeRectangle, setActiveRectangle] = useState(null);
-
-  // Map each rectangle to an independent Rectangle instance
-  const rectangleInstances = rectangles.map((rect) => Rectangle(viewportState, zoom, centerSectionRef, rect));
+  const mouseFollowerRef = useRef(null);
+  const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
+  const rectangleInstances = rectangles.map((rect) => Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition));
 
   // Update mouse position on mouse move
   useEffect(() => {
     const handleMouseMoveWrapper = (event) => {
+      if (mouseFollowerRef.current) {
+        const cameraRect = centerSectionRef.current.getBoundingClientRect();
+        mouseFollowerRef.current.style.left = `${event.clientX - cameraRect.left}px`;
+        mouseFollowerRef.current.style.top = `${event.clientY - cameraRect.top}px`;
+
+        // Calculate adjusted mouse position
+        const adjustedY = (event.clientY - cameraRect.top) / zoom;
+        setAdjustedMousePosition(adjustedY);
+      }
+
       if (activeRectangle !== null) {
         const instance = rectangleInstances[activeRectangle];
-        if (instance.isDragging) {
+        if (instance.isDragging || instance.isResizing) {
           instance.handleMouseMoveRectangle(event);
         } else {
           handleMouseMoveCamera(event, positionState, setPositionState, zoom);
@@ -50,7 +60,7 @@ function App() {
 
     window.addEventListener('mousemove', handleMouseMoveWrapper);
     return () => { window.removeEventListener('mousemove', handleMouseMoveWrapper); };
-  }, [activeRectangle, rectangleInstances, handleMouseMoveCamera, positionState, setPositionState, zoom]);
+  }, [activeRectangle, rectangleInstances, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef]);
 
   // Handle mouse down to start dragging
   const handleMouseDown = useCallback((event) => {
@@ -69,7 +79,7 @@ function App() {
     event.preventDefault();
     if (activeRectangle !== null) {
       const instance = rectangleInstances[activeRectangle];
-      if (instance.isDragging) {
+      if (instance.isDragging || instance.isResizing) {
         instance.handleMouseUpRectangle();
       }
       setActiveRectangle(null);
@@ -80,7 +90,6 @@ function App() {
 
   return (
     <div className="App" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-
       <animated.div
         className="room"
         style={{
@@ -107,20 +116,22 @@ function App() {
           />
 
           {rectangles.map((rect, index) => (
-            <animated.div
-              key={rect.id}
-              className={`rectangle rectangle-${rect.id} ${rectangleInstances[index].isDragging ? 'dragging' : ''}`}
-              style={{
-                transform: rectangleInstances[index].rectangleProps.x.to((x) => {
-                  const relativePos = rectangleInstances[index].getRelativePosition({
-                    x: rectangleInstances[index].rectangleProps.x.get(),
-                    y: rectangleInstances[index].rectangleProps.y.get(),
-                  });
-                  return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleInstances[index].absoluteRectanglePosition.x) / 10}deg)`;
-                }),
-                position: 'absolute',
-              }}
-            />
+            <React.Fragment key={rect.id}>
+              <animated.div
+                className={`rectangle rectangle-${rect.id} ${rectangleInstances[index].isDragging ? 'dragging' : ''} ${rectangleInstances[index].isResizing ? 'resizing' : ''}`}
+                style={{
+                  transform: rectangleInstances[index].rectangleProps.x.to((x) => {
+                    const relativePos = rectangleInstances[index].getRelativePosition({
+                      x: rectangleInstances[index].rectangleProps.x.get(),
+                      y: rectangleInstances[index].rectangleProps.y.get(),
+                    });
+                    return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleInstances[index].absoluteRectanglePosition.x) / 10}deg)`;
+                  }),
+                  height: rectangleInstances[index].rectangleProps.height,
+                  position: 'absolute',
+                }}
+              />
+            </React.Fragment>
           ))}
 
           {activeRectangle !== null && rectangleInstances[activeRectangle].showGhost && (
@@ -133,9 +144,13 @@ function App() {
               }}
             />
           )}
+
+          {/* To keep track of the position of the mouse in a window with zoom equal to 1 */}
+          <div ref={mouseFollowerRef} style={{ position: 'absolute', pointerEvents: 'none' }} />
+
         </animated.div>
       </animated.div>
-    </div>
+    </div >
   );
 }
 
