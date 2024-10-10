@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition, adjustedMousePosition) {
+export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition, adjustedMousePosition, gridSize) {
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
 
@@ -53,10 +53,10 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
             setAbsoluteRectanglePosition(newAbsolutePosition);
         } else if (isResizing) {
             const newY = event.clientY - positionState.offset.y;
-            const newHeight = Math.max(20, Math.min(300, newY - absoluteRectanglePosition.y));
+            const newHeight = Math.max(20, Math.min(300, Math.round((newY - absoluteRectanglePosition.y) / gridSize) * gridSize));
             setHeight(newHeight);
         }
-    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing]);
+    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize]);
 
     // Handle mouse down for the rectangle to start dragging or resizing
     const handleMouseDownRectangle = useCallback((event) => {
@@ -92,10 +92,10 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
         setIsResizing(false);
         document.body.style.cursor = 'default';
         if (showGhost) {
-            const snappedY = Math.round(absoluteRectanglePosition.y / 100) * 100;
+            const snappedY = Math.round(absoluteRectanglePosition.y / gridSize) * gridSize;
             setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
         }
-    }, [showGhost, absoluteRectanglePosition, viewportState]);
+    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {

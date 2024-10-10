@@ -28,10 +28,12 @@ function App() {
     { id: 4, x: -75, y: 0, height: 80 },
   ]);
 
+  const gridSize = 25;
+
   const [activeRectangle, setActiveRectangle] = useState(null);
   const mouseFollowerRef = useRef(null);
   const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
-  const rectangleInstances = rectangles.map((rect) => Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition));
+  const rectangleInstances = rectangles.map((rect) => Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize));
 
   // Update mouse position on mouse move
   useEffect(() => {
@@ -139,7 +141,7 @@ function App() {
               className="ghost"
               style={{
                 left: `${0}px`,
-                top: `${Math.round(rectangleInstances[activeRectangle].getRelativePosition(rectangleInstances[activeRectangle].absoluteRectanglePosition).y / 100) * 100}px`,
+                top: `${Math.round(rectangleInstances[activeRectangle].getRelativePosition(rectangleInstances[activeRectangle].absoluteRectanglePosition).y / gridSize) * gridSize}px`,
                 position: 'absolute',
               }}
             />
