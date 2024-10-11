@@ -18,7 +18,7 @@ function App() {
     isCameraDragging,
     positionState,
     setPositionState
-  } = Camera();
+  } = Camera(getClientXY);
 
   // Multiple rectangles with independent states
   const [rectangles,] = useState([
@@ -42,6 +42,7 @@ function App() {
   const [activeRectangle, setActiveRectangle] = useState(null);
   const mouseFollowerRef = useRef(null);
   const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
+
   const rectangleInstances = rectangles.map((rect) =>
     Rectangle(
       viewportState,
@@ -53,20 +54,44 @@ function App() {
       startX,
       rectangles,
       updatedRectangleData,
-      setUpdatedRectangleData
+      setUpdatedRectangleData,
+      getClientXY
     )
   );
 
-  // Update mouse position on mouse move
-  useEffect(() => {
-    const handleMouseMoveWrapper = (event) => {
-      if (mouseFollowerRef.current) {
-        const cameraRect = centerSectionRef.current.getBoundingClientRect();
-        mouseFollowerRef.current.style.left = `${event.clientX - cameraRect.left}px`;
-        mouseFollowerRef.current.style.top = `${event.clientY - cameraRect.top}px`;
+  // Helper function to get clientX and clientY
+  function getClientXY(event) {
+    if (event.touches && event.touches.length > 0) {
+      return {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY,
+      };
+    } else if (event.clientX !== undefined && event.clientY !== undefined) {
+      return {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
+    } else {
+      return null;
+    }
+  }
 
-        // Calculate adjusted mouse position
-        const adjustedY = (event.clientY - cameraRect.top) / zoom;
+  // Update position on touch/mouse move
+  useEffect(() => {
+    const handleMoveWrapper = (event) => {
+      event.preventDefault();
+
+      const coords = getClientXY(event);
+      if (!coords) return;
+      const { clientX, clientY } = coords;
+
+      if (mouseFollowerRef.current && centerSectionRef.current) {
+        const cameraRect = centerSectionRef.current.getBoundingClientRect();
+        mouseFollowerRef.current.style.left = `${clientX - cameraRect.left}px`;
+        mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
+
+        // Calculate adjusted position
+        const adjustedY = (clientY - cameraRect.top) / zoom;
         setAdjustedMousePosition(adjustedY);
       }
 
@@ -82,38 +107,68 @@ function App() {
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMoveWrapper);
-    return () => { window.removeEventListener('mousemove', handleMouseMoveWrapper); };
+    // Attach both mousemove and touchmove events
+    window.addEventListener('mousemove', handleMoveWrapper);
+    window.addEventListener('touchmove', handleMoveWrapper, { passive: false });
+
+    return () => {
+      window.removeEventListener('mousemove', handleMoveWrapper);
+      window.removeEventListener('touchmove', handleMoveWrapper);
+    };
   }, [activeRectangle, rectangleInstances, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef]);
 
-  // Handle mouse down to start dragging
-  const handleMouseDown = useCallback((event) => {
-    event.preventDefault();
-    const rectIndex = rectangles.findIndex(r => event.target.classList.contains(`rectangle-${r.id}`));
-    if (rectIndex !== -1) {
-      setActiveRectangle(rectIndex);
-      rectangleInstances[rectIndex].handleMouseDownRectangle(event);
-    } else {
-      handleMouseDownCamera(event, setPositionState);
-    }
+  // Handle touch/mouse down to start dragging
+  useEffect(() => {
+    const handleDown = (event) => {
+      event.preventDefault();
+      const rectIndex = rectangles.findIndex(r => event.target.classList.contains(`rectangle-${r.id}`));
+      if (rectIndex !== -1) {
+        setActiveRectangle(rectIndex);
+        rectangleInstances[rectIndex].handleMouseDownRectangle(event);
+      } else {
+        handleMouseDownCamera(event, setPositionState);
+      }
+    };
+
+    window.addEventListener('touchstart', handleDown, { passive: false });
+    window.addEventListener('mousedown', handleDown);
+
+    return () => {
+      window.removeEventListener('touchstart', handleDown);
+      window.removeEventListener('mousedown', handleDown);
+    };
   }, [rectangleInstances, rectangles, handleMouseDownCamera, setPositionState]);
 
-  // Handle mouse up to stop dragging
-  const handleMouseUp = useCallback((event) => {
-    event.preventDefault();
-    if (activeRectangle !== null) {
-      const instance = rectangleInstances[activeRectangle];
-      if (instance.isDragging || instance.isResizing) {
-        instance.handleMouseUpRectangle();
+  // Handle touch/mouse up to stop dragging
+  useEffect(() => {
+    const handleUp = (event) => {
+      event.preventDefault();
+      if (activeRectangle !== null) {
+        const instance = rectangleInstances[activeRectangle];
+        if (instance.isDragging || instance.isResizing) {
+          instance.handleMouseUpRectangle();
+        }
+        setActiveRectangle(null);
+      } else if (isCameraDragging) {
+        handleMouseUpCamera(positionState, setPositionState);
       }
-      setActiveRectangle(null);
-    } else if (isCameraDragging) {
-      handleMouseUpCamera(positionState, setPositionState);
-    }
+    };
+
+    window.addEventListener('touchend', handleUp, { passive: false });
+    window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchcancel', handleUp, { passive: false });
+    window.addEventListener('mouseleave', handleUp);
+
+    return () => {
+      window.removeEventListener('touchend', handleUp);
+      window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchcancel', handleUp);
+      window.removeEventListener('mouseleave', handleUp);
+    };
   }, [activeRectangle, rectangleInstances, isCameraDragging, handleMouseUpCamera, positionState, setPositionState]);
 
   return (
-    <div className="App" onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+    <div className="App">
       <animated.div
         className="room"
         style={{
@@ -176,7 +231,7 @@ function App() {
 
         </animated.div>
       </animated.div>
-    </div >
+    </div>
   );
 }
 

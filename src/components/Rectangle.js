@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX, allRectangles, updatedRectangleData, setUpdatedRectangleData) {
+export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize,
+    startX, allRectangles, updatedRectangleData, setUpdatedRectangleData, getClientXY) {
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
 
@@ -72,10 +73,11 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         [viewportState, centerSectionRef]
     );
 
-    // Handle mouse move for the rectangle to update its position
+    // Handle mouse/touch move for the rectangle to update its position
     const handleMouseMoveRectangle = useCallback((event) => {
+        const { clientX, clientY } = getClientXY(event);
         if (isDragging) {
-            const newMousePosition = { x: event.clientX, y: event.clientY };
+            const newMousePosition = { x: clientX, y: clientY };
             setPositionState((prev) => ({
                 ...prev,
                 mousePosition: newMousePosition,
@@ -86,7 +88,7 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
             };
             setAbsoluteRectanglePosition(newAbsolutePosition);
         } else if (isResizing) {
-            const newY = event.clientY - positionState.offset.y;
+            const newY = clientY - positionState.offset.y;
             const newHeight = Math.max(20, Math.min(300, Math.round((newY - absoluteRectanglePosition.y) / gridSize) * gridSize));
             var canResize = true;
 
@@ -103,8 +105,9 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         }
     }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap, rect.id, startX]);
 
-    // Handle mouse down for the rectangle to start dragging or resizing
+    // Handle mouse/touch down for the rectangle to start dragging or resizing
     const handleMouseDownRectangle = useCallback((event) => {
+        const { clientX, clientY } = getClientXY(event);
         const currentRectBottom = absoluteRectanglePosition.y + height;
         setInitialDragPosition({ ...absoluteRectanglePosition });  // Store initial drag position
 
@@ -114,8 +117,8 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
             setPositionState((prev) => ({
                 ...prev,
                 offset: {
-                    x: event.clientX - absoluteRectanglePosition.x,
-                    y: event.clientY - currentRectBottom,
+                    x: clientX - absoluteRectanglePosition.x,
+                    y: clientY - currentRectBottom,
                 },
             }));
         } else {
@@ -125,14 +128,14 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
             setPositionState((prev) => ({
                 ...prev,
                 offset: {
-                    x: event.clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
-                    y: event.clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
+                    x: clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
+                    y: clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
                 },
             }));
         }
     }, [getRelativePosition, absoluteRectanglePosition, viewportState, zoom, height, adjustedMousePosition]);
 
-    // Handle mouse up for the rectangle to stop dragging
+    // Handle mouse/touch up for the rectangle to stop dragging
     const handleMouseUpRectangle = useCallback(() => {
         if (isDragging) {
             var overlapping = false;

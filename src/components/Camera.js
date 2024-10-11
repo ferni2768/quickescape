@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Camera() {
+export function Camera(getClientXY) {
     const [zoom, setZoom] = useState(1);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
     const centerSectionRef = useRef(null);
@@ -68,34 +68,37 @@ export function Camera() {
         return () => window.removeEventListener('resize', handleResize);
     }, [centerCamera]);
 
-    // Update camera position on mouse move
+    // Update camera position on mouse/touch move
     const handleMouseMoveCamera = useCallback((event, positionState, setPositionState, zoom) => {
+        const { clientX, clientY } = getClientXY(event);
         if (isCameraDragging) {
+            const newMousePosition = { x: clientX, y: clientY };
             setViewportState((prev) => ({
                 ...prev,
                 cameraPosition: {
-                    x: prev.cameraPosition.x - (event.clientX - positionState.offset.x) / zoom,
-                    y: prev.cameraPosition.y - (event.clientY - positionState.offset.y) / zoom,
+                    x: prev.cameraPosition.x - (newMousePosition.x - positionState.offset.x) / zoom,
+                    y: prev.cameraPosition.y - (newMousePosition.y - positionState.offset.y) / zoom,
                 },
             }));
             setPositionState((prev) => ({
                 ...prev,
-                offset: { x: event.clientX, y: event.clientY },
+                offset: { x: newMousePosition.x, y: newMousePosition.y },
             }));
         }
     }, [isCameraDragging]);
 
-    // Handle mouse down to start dragging the camera
+    // Handle mouse/touch down to start dragging the camera
     const handleMouseDownCamera = useCallback((event, setPositionState) => {
+        const { clientX, clientY } = getClientXY(event);
         setIsCameraDragging(true);
         document.body.style.cursor = 'grabbing';
         setPositionState((prev) => ({
             ...prev,
-            offset: { x: event.clientX, y: event.clientY },
+            offset: { x: clientX, y: clientY },
         }));
     }, []);
 
-    // Handle mouse up to stop dragging the camera
+    // Handle mouse/touch up to stop dragging the camera
     const handleMouseUpCamera = useCallback((positionState, setPositionState) => {
         setIsCameraDragging(false);
         document.body.style.cursor = 'default';
