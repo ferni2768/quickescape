@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { animated } from '@react-spring/web';
 import './App.css';
 import { Camera } from './components/Camera';

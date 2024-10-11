@@ -6,6 +6,13 @@ export function Camera(getClientXY) {
     const [isCameraDragging, setIsCameraDragging] = useState(false);
     const centerSectionRef = useRef(null);
 
+    // For pinch to zoom
+    const [touchStartDistance, setTouchStartDistance] = useState(null);
+    const [touchMidpoint, setTouchMidpoint] = useState(null);
+
+    const zoomLimits = { min: 0.5, max: 2 };
+    const zoomProps = useSpring({ zoom });
+
     const [viewportState, setViewportState] = useState({
         windowSize: { width: window.innerWidth, height: window.innerHeight },
         cameraPosition: { x: -window.innerWidth / 2, y: -window.innerHeight / 2 },
@@ -20,8 +27,6 @@ export function Camera(getClientXY) {
         mousePosition: { x: 0, y: 0 },
         offset: { x: 0, y: 0 }
     });
-
-    const zoomProps = useSpring({ zoom });
 
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
@@ -70,6 +75,7 @@ export function Camera(getClientXY) {
 
     // Update camera position on mouse/touch move
     const handleMouseMoveCamera = useCallback((event, positionState, setPositionState, zoom) => {
+        if (event.touches && event.touches.length > 1) return;
         const { clientX, clientY } = getClientXY(event);
         if (isCameraDragging) {
             const newMousePosition = { x: clientX, y: clientY };
@@ -85,7 +91,7 @@ export function Camera(getClientXY) {
                 offset: { x: newMousePosition.x, y: newMousePosition.y },
             }));
         }
-    }, [isCameraDragging]);
+    }, [isCameraDragging, getClientXY]);
 
     // Handle mouse/touch down to start dragging the camera
     const handleMouseDownCamera = useCallback((event, setPositionState) => {
@@ -96,7 +102,7 @@ export function Camera(getClientXY) {
             ...prev,
             offset: { x: clientX, y: clientY },
         }));
-    }, []);
+    }, [getClientXY]);
 
     // Handle mouse/touch up to stop dragging the camera
     const handleMouseUpCamera = useCallback((positionState, setPositionState) => {
@@ -112,8 +118,55 @@ export function Camera(getClientXY) {
 
     // Handle zooming
     const handleZoom = useCallback((delta) => {
-        setZoom((prevZoom) => Math.max(0.1, Math.min(prevZoom + delta, 5)));
+        setZoom((prevZoom) => prevZoom + delta);
     }, []);
+
+    // Handle pinch to zoom
+    const handleTouchMove = useCallback((event) => {
+        event.preventDefault();
+
+        if (event.touches.length === 2 && touchStartDistance !== null) {
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const scale = distance / touchStartDistance;
+
+            const newZoom = zoom * scale;
+            setZoom(Math.max(0.1, Math.min(newZoom, 5)));
+
+            // Update camera position to keep the midpoint centered
+            const centerX = viewportState.windowSize.width / 2;
+            const centerY = viewportState.windowSize.height / 2;
+            const newCameraX = viewportState.cameraPosition.x + (touchMidpoint.x - centerX) * (scale - 1);
+            const newCameraY = viewportState.cameraPosition.y + (touchMidpoint.y - centerY) * (scale - 1);
+
+            setViewportState((prev) => ({
+                ...prev,
+                cameraPosition: { x: newCameraX, y: newCameraY },
+            }));
+
+            setTouchStartDistance(distance);
+        }
+    }, [zoom, touchStartDistance, viewportState, touchMidpoint]);
+
+    // Handle touch end to stop pinch to zoom
+    const handleTouchEnd = useCallback(() => {
+        setTouchStartDistance(null);
+        setTouchMidpoint(null);
+
+        setZoom((prevZoom) => {
+            if (prevZoom < zoomLimits.min) {
+                return zoomLimits.min;
+            } else if (prevZoom > zoomLimits.max) {
+                return zoomLimits.max;
+            }
+            return prevZoom;
+        });
+    }, [zoomLimits.max, zoomLimits.min]);
 
     // Handle zooming with ctrl button
     useEffect(() => {
@@ -121,16 +174,46 @@ export function Camera(getClientXY) {
             if (event.ctrlKey) {
                 if (event.key === '+' || event.key === '=') {
                     event.preventDefault();
-                    handleZoom(0.1);
+                    if (zoom < zoomLimits.max) { handleZoom(0.1); }
                 } else if (event.key === '-') {
                     event.preventDefault();
-                    handleZoom(-0.1);
+                    if (zoom > zoomLimits.min) { handleZoom(-0.1); }
                 }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleZoom]);
+    }, [handleZoom, zoom, zoomLimits.min, zoomLimits.max]);
+
+    // Add event listeners for touch events
+    useEffect(() => {
+        const handleTouchStart = (event) => {
+            if (event.touches.length === 2) {
+                const touch1 = event.touches[0];
+                const touch2 = event.touches[1];
+
+                const dx = touch2.clientX - touch1.clientX;
+                const dy = touch2.clientY - touch1.clientY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                const midpointX = (touch1.clientX + touch2.clientX) / 2;
+                const midpointY = (touch1.clientY + touch2.clientY) / 2;
+
+                setTouchStartDistance(distance);
+                setTouchMidpoint({ x: midpointX, y: midpointY });
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: false });
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+        return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [handleTouchMove, handleTouchEnd]);
 
     return {
         viewportState,

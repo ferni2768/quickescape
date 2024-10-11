@@ -73,38 +73,6 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         [viewportState, centerSectionRef]
     );
 
-    // Handle mouse/touch move for the rectangle to update its position
-    const handleMouseMoveRectangle = useCallback((event) => {
-        const { clientX, clientY } = getClientXY(event);
-        if (isDragging) {
-            const newMousePosition = { x: clientX, y: clientY };
-            setPositionState((prev) => ({
-                ...prev,
-                mousePosition: newMousePosition,
-            }));
-            const newAbsolutePosition = {
-                x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
-                y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
-            };
-            setAbsoluteRectanglePosition(newAbsolutePosition);
-        } else if (isResizing) {
-            const newY = clientY - positionState.offset.y;
-            const newHeight = Math.max(20, Math.min(300, Math.round((newY - absoluteRectanglePosition.y) / gridSize) * gridSize));
-            var canResize = true;
-
-            if (absoluteRectanglePosition.x === startX) {
-                for (let i = 1; i < allRectangles.length + 1; i++) {
-                    if ((allRectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
-                        setHeight(height);
-                        canResize = false;
-                        break;
-                    }
-                }
-            }
-            if (canResize) setHeight(newHeight);
-        }
-    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap, rect.id, startX]);
-
     // Handle mouse/touch down for the rectangle to start dragging or resizing
     const handleMouseDownRectangle = useCallback((event) => {
         const { clientX, clientY } = getClientXY(event);
@@ -133,7 +101,7 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
                 },
             }));
         }
-    }, [getRelativePosition, absoluteRectanglePosition, viewportState, zoom, height, adjustedMousePosition]);
+    }, [getRelativePosition, absoluteRectanglePosition, viewportState, zoom, height, adjustedMousePosition, getClientXY]);
 
     // Handle mouse/touch up for the rectangle to stop dragging
     const handleMouseUpRectangle = useCallback(() => {
@@ -163,6 +131,42 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         setIsResizing(false);
         document.body.style.cursor = 'default';
     }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles, initialDragPosition, rect.id, isDragging, centerSectionRef, height]);
+
+    // Handle mouse/touch move for the rectangle to update its position
+    const handleMouseMoveRectangle = useCallback((event) => {
+        if (event.touches && event.touches.length > 1) {
+            handleMouseUpRectangle(event.touches[0]);
+            return;
+        }
+        const { clientX, clientY } = getClientXY(event);
+        if (isDragging) {
+            const newMousePosition = { x: clientX, y: clientY };
+            setPositionState((prev) => ({
+                ...prev,
+                mousePosition: newMousePosition,
+            }));
+            const newAbsolutePosition = {
+                x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
+                y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
+            };
+            setAbsoluteRectanglePosition(newAbsolutePosition);
+        } else if (isResizing) {
+            const newY = clientY - positionState.offset.y;
+            const newHeight = Math.max(20, Math.min(300, Math.round((newY - absoluteRectanglePosition.y) / gridSize) * gridSize));
+            var canResize = true;
+
+            if (absoluteRectanglePosition.x === startX) {
+                for (let i = 1; i < allRectangles.length + 1; i++) {
+                    if ((allRectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
+                        setHeight(height);
+                        canResize = false;
+                        break;
+                    }
+                }
+            }
+            if (canResize) setHeight(newHeight);
+        }
+    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap, rect.id, startX, getClientXY, handleMouseUpRectangle]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
