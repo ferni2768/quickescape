@@ -20,7 +20,7 @@
 
 .rectangle {
     width: 150px;
-    height: 50px;
+    height: auto;
     background-color: blue;
     position: absolute;
     top: 0;
@@ -31,6 +31,10 @@
 
 .rectangle.dragging {
     cursor: grabbing;
+}
+
+.rectangle.resizing {
+    cursor: ns-resize;
 }
 
 .center-section {
