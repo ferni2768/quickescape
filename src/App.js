@@ -165,6 +165,7 @@ function App() {
                 left: `${0}px`,
                 top: `${Math.round(rectangleInstances[activeRectangle].getRelativePosition(rectangleInstances[activeRectangle].absoluteRectanglePosition).y / gridSize) * gridSize}px`,
                 position: 'absolute',
+                height: rectangleInstances[activeRectangle].rectangleProps.height.get()
               }}
             />
           )}

@@ -32,21 +32,23 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
 
     // Utility to check if two rectangles overlap
     const doesOverlap = useCallback((id, customPos1, customHeight) => {
-        if (updatedRectangleData[id - 1].absolutePosition.x != startX) return false;
+        if (updatedRectangleData[id - 1].absolutePosition.x !== startX) return false;
+
+        const thereshold = 5;
 
         const pos1 = customPos1 !== undefined ? customPos1 : absoluteRectanglePosition.y;
         const hei = customHeight !== undefined ? customHeight : height;
 
-        const top1 = pos1 + 1;
-        const bot1 = top1 + hei - 1;
+        const top1 = pos1 + thereshold;
+        const bot1 = top1 + hei - thereshold;
 
         const otherRect = updatedRectangleData[id - 1];
 
-        const top2 = otherRect.absolutePosition.y + 1;
-        const bot2 = top2 + otherRect.height - 1;
+        const top2 = otherRect.absolutePosition.y + thereshold;
+        const bot2 = top2 + otherRect.height - thereshold;
 
         return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
-    }, [absoluteRectanglePosition, height, updatedRectangleData]);
+    }, [absoluteRectanglePosition, height, updatedRectangleData, startX]);
 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
@@ -90,7 +92,7 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
 
             if (absoluteRectanglePosition.x === startX) {
                 for (let i = 1; i < allRectangles.length + 1; i++) {
-                    if ((allRectangles[i - 1].id != rect.id) && doesOverlap(i, undefined, newHeight)) {
+                    if ((allRectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
                         setHeight(height);
                         canResize = false;
                         break;
@@ -99,7 +101,7 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
             }
             if (canResize) setHeight(newHeight);
         }
-    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap]);
+    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap, rect.id, startX]);
 
     // Handle mouse down for the rectangle to start dragging or resizing
     const handleMouseDownRectangle = useCallback((event) => {
@@ -137,7 +139,7 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
 
             if (showGhost) {
                 for (let i = 1; i < allRectangles.length + 1; i++) {
-                    if ((allRectangles[i - 1].id != rect.id) && doesOverlap(i, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize)) {
+                    if ((allRectangles[i - 1].id !== rect.id) && doesOverlap(i, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize)) {
                         setAbsoluteRectanglePosition(initialDragPosition);
                         overlapping = true;
                         break;
@@ -156,18 +158,18 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         setIsDragging(false);
         setIsResizing(false);
         document.body.style.cursor = 'default';
-    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles]);
+    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles, initialDragPosition, rect.id, isDragging]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
         const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 250;
         const centerSectionEnd = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 + 100;
-        if (absoluteRectanglePosition.x > centerSectionStart && absoluteRectanglePosition.x < centerSectionEnd) {
+        if (!isResizing && absoluteRectanglePosition.x > centerSectionStart && absoluteRectanglePosition.x < centerSectionEnd) {
             setShowGhost(true);
         } else {
             setShowGhost(false);
         }
-    }, [absoluteRectanglePosition, viewportState]);
+    }, [absoluteRectanglePosition, viewportState, isResizing]);
 
     // Update rectangle position when zooming
     useEffect(() => {
