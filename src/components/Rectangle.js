@@ -1,16 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition, adjustedMousePosition, gridSize) {
+export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX, allRectangles, updatedRectangleData, setUpdatedRectangleData) {
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
 
     const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({
-        x: initialPosition.x,
-        y: initialPosition.y,
+        x: rect.x,
+        y: rect.y,
     });
 
-    const [height, setHeight] = useState(initialPosition.height || 50);
+    const [initialDragPosition, setInitialDragPosition] = useState({
+        x: rect.x,
+        y: rect.y,
+    });
+
+    const [height, setHeight] = useState(rect.height || 50);
     const [showGhost, setShowGhost] = useState(false);
 
     const rectangleProps = useSpring({
@@ -24,6 +29,33 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
         mousePosition: { x: 0, y: 0 },
         offset: { x: 0, y: 0 }
     });
+
+    // Utility to check if two rectangles overlap
+    const doesOverlap = useCallback((id, customPos1, customHeight) => {
+        if (updatedRectangleData[id - 1].absolutePosition.x != startX) return false;
+
+        const pos1 = customPos1 !== undefined ? customPos1 : absoluteRectanglePosition.y;
+        const hei = customHeight !== undefined ? customHeight : height;
+
+        const top1 = pos1 + 1;
+        const bot1 = top1 + hei - 1;
+
+        const otherRect = updatedRectangleData[id - 1];
+
+        const top2 = otherRect.absolutePosition.y + 1;
+        const bot2 = top2 + otherRect.height - 1;
+
+        return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
+    }, [absoluteRectanglePosition, height, updatedRectangleData]);
+
+    // Update rectangle data when dragging or resizing
+    useEffect(() => {
+        setUpdatedRectangleData((prevPositions) =>
+            prevPositions.map((r) =>
+                r.id === rect.id ? { ...r, absolutePosition: absoluteRectanglePosition, height: height } : r
+            )
+        );
+    }, [absoluteRectanglePosition, height, rect.id, setUpdatedRectangleData]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -54,13 +86,25 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
         } else if (isResizing) {
             const newY = event.clientY - positionState.offset.y;
             const newHeight = Math.max(20, Math.min(300, Math.round((newY - absoluteRectanglePosition.y) / gridSize) * gridSize));
-            setHeight(newHeight);
+            var canResize = true;
+
+            if (absoluteRectanglePosition.x === startX) {
+                for (let i = 1; i < allRectangles.length + 1; i++) {
+                    if ((allRectangles[i - 1].id != rect.id) && doesOverlap(i, undefined, newHeight)) {
+                        setHeight(height);
+                        canResize = false;
+                        break;
+                    }
+                }
+            }
+            if (canResize) setHeight(newHeight);
         }
-    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize]);
+    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap]);
 
     // Handle mouse down for the rectangle to start dragging or resizing
     const handleMouseDownRectangle = useCallback((event) => {
         const currentRectBottom = absoluteRectanglePosition.y + height;
+        setInitialDragPosition({ ...absoluteRectanglePosition });  // Store initial drag position
 
         if (adjustedMousePosition >= currentRectBottom - 15 && adjustedMousePosition <= currentRectBottom) {
             setIsResizing(true);
@@ -88,14 +132,31 @@ export function Rectangle(viewportState, zoom, centerSectionRef, initialPosition
 
     // Handle mouse up for the rectangle to stop dragging
     const handleMouseUpRectangle = useCallback(() => {
+        if (isDragging) {
+            var overlapping = false;
+
+            if (showGhost) {
+                for (let i = 1; i < allRectangles.length + 1; i++) {
+                    if ((allRectangles[i - 1].id != rect.id) && doesOverlap(i, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize)) {
+                        setAbsoluteRectanglePosition(initialDragPosition);
+                        overlapping = true;
+                        break;
+                    }
+                }
+            }
+
+            if (showGhost && !overlapping) {
+                const snappedY = Math.round(absoluteRectanglePosition.y / gridSize) * gridSize;
+                setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
+            } else if (overlapping) {
+                setAbsoluteRectanglePosition(initialDragPosition);
+            }
+
+        }
         setIsDragging(false);
         setIsResizing(false);
         document.body.style.cursor = 'default';
-        if (showGhost) {
-            const snappedY = Math.round(absoluteRectanglePosition.y / gridSize) * gridSize;
-            setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
-        }
-    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize]);
+    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {

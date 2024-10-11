@@ -22,18 +22,40 @@ function App() {
 
   // Multiple rectangles with independent states
   const [rectangles,] = useState([
-    { id: 1, x: -350, y: 0, height: 50 },
-    { id: 2, x: -350, y: 100, height: 50 },
+    { id: 1, x: -75, y: 0, height: 50 },
+    { id: 2, x: -75, y: 100, height: 50 },
     { id: 3, x: -350, y: 200, height: 100 },
     { id: 4, x: -75, y: 0, height: 80 },
   ]);
 
+  const [updatedRectangleData, setUpdatedRectangleData] = useState(
+    rectangles.map(rect => ({
+      id: rect.id,
+      absolutePosition: { x: rect.x, y: rect.y },
+      height: rect.height,
+    }))
+  );
+
   const gridSize = 25;
+  const startX = -75;
 
   const [activeRectangle, setActiveRectangle] = useState(null);
   const mouseFollowerRef = useRef(null);
   const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
-  const rectangleInstances = rectangles.map((rect) => Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize));
+  const rectangleInstances = rectangles.map((rect) =>
+    Rectangle(
+      viewportState,
+      zoom,
+      centerSectionRef,
+      rect,
+      adjustedMousePosition,
+      gridSize,
+      startX,
+      rectangles,
+      updatedRectangleData,
+      setUpdatedRectangleData
+    )
+  );
 
   // Update mouse position on mouse move
   useEffect(() => {
