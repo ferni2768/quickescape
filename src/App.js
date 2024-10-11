@@ -163,7 +163,8 @@ function App() {
               className="ghost"
               style={{
                 left: `${0}px`,
-                top: `${Math.round(rectangleInstances[activeRectangle].getRelativePosition(rectangleInstances[activeRectangle].absoluteRectanglePosition).y / gridSize) * gridSize}px`,
+                top: `${centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleInstances[activeRectangle].rectangleProps.height.get(),
+                  Math.max(0, Math.round(rectangleInstances[activeRectangle].getRelativePosition(rectangleInstances[activeRectangle].absoluteRectanglePosition).y / gridSize) * gridSize)) : 0}px`,
                 position: 'absolute',
                 height: rectangleInstances[activeRectangle].rectangleProps.height.get()
               }}

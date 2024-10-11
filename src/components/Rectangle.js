@@ -148,7 +148,8 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
             }
 
             if (showGhost && !overlapping) {
-                const snappedY = Math.round(absoluteRectanglePosition.y / gridSize) * gridSize;
+                const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - height,
+                    Math.max(0, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize);
                 setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
             } else if (overlapping) {
                 setAbsoluteRectanglePosition(initialDragPosition);
@@ -158,18 +159,19 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         setIsDragging(false);
         setIsResizing(false);
         document.body.style.cursor = 'default';
-    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles, initialDragPosition, rect.id, isDragging]);
+    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles, initialDragPosition, rect.id, isDragging, centerSectionRef, height]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
         const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 250;
         const centerSectionEnd = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 + 100;
-        if (!isResizing && absoluteRectanglePosition.x > centerSectionStart && absoluteRectanglePosition.x < centerSectionEnd) {
+        if (!isResizing && absoluteRectanglePosition.x > centerSectionStart && absoluteRectanglePosition.x < centerSectionEnd
+            && absoluteRectanglePosition.y >= -gridSize * 7 && absoluteRectanglePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - height + 7 * gridSize : 0)) {
             setShowGhost(true);
         } else {
             setShowGhost(false);
         }
-    }, [absoluteRectanglePosition, viewportState, isResizing]);
+    }, [absoluteRectanglePosition, viewportState, isResizing, gridSize, centerSectionRef, height]);
 
     // Update rectangle position when zooming
     useEffect(() => {
