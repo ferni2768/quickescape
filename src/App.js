@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { animated } from '@react-spring/web';
 import './App.css';
 import { Camera } from './components/Camera';
-import { Rectangle } from './components/Rectangle';
+import Rectangle from './components/Rectangle';
 
 function App() {
 
@@ -21,11 +21,11 @@ function App() {
   } = Camera(getClientXY);
 
   // Multiple rectangles with independent states
-  const [rectangles,] = useState([
+  const [rectangles, setRectangles] = useState([
     { id: 1, x: -75, y: 0, height: 50 },
     { id: 2, x: -75, y: 100, height: 50 },
     { id: 3, x: -350, y: 200, height: 100 },
-    { id: 4, x: -75, y: 0, height: 80 },
+    { id: 4, x: 140, y: 150, height: 80 },
   ]);
 
   const [updatedRectangleData, setUpdatedRectangleData] = useState(
@@ -43,21 +43,69 @@ function App() {
   const mouseFollowerRef = useRef(null);
   const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
 
-  const rectangleInstances = rectangles.map((rect) =>
-    Rectangle(
-      viewportState,
-      zoom,
-      centerSectionRef,
-      rect,
-      adjustedMousePosition,
-      gridSize,
-      startX,
-      rectangles,
-      updatedRectangleData,
-      setUpdatedRectangleData,
-      getClientXY
-    )
-  );
+  const rectangleInstances = useRef(
+    rectangles.map((rect) => ({
+      id: rect.id,
+      isDragging: false,
+      isResizing: false,
+      showGhost: false,
+      rectangleProps: {
+        height: {
+          get: () => rect.height,
+        },
+      },
+      getRelativePosition: (position) => position,
+      absoluteRectanglePosition: { x: rect.x, y: rect.y },
+    }))
+  ).current;
+
+  // Handle key press to create a new rectangle
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'b' || event.key === 'B') {
+        const newRectangle = {
+          id: rectangles.length + 1,
+          x: -100,
+          y: -100,
+          height: 50,
+        };
+
+        setRectangles(prevRectangles => [
+          ...prevRectangles,
+          newRectangle
+        ]);
+
+        rectangleInstances.push({
+          id: newRectangle.id,
+          isDragging: false,
+          isResizing: false,
+          showGhost: false,
+          rectangleProps: {
+            height: {
+              get: () => newRectangle.height,
+            },
+          },
+          getRelativePosition: (position) => position,
+          absoluteRectanglePosition: { x: newRectangle.x, y: newRectangle.y },
+        });
+
+        setUpdatedRectangleData(prevData => [
+          ...prevData,
+          {
+            id: newRectangle.id,
+            absolutePosition: { x: newRectangle.x, y: newRectangle.y },
+            height: newRectangle.height,
+          }
+        ]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [rectangles, rectangleInstances, setUpdatedRectangleData]);
 
   // Helper function to get clientX and clientY
   function getClientXY(event) {
@@ -98,7 +146,7 @@ function App() {
       if (activeRectangle !== null) {
         const instance = rectangleInstances[activeRectangle];
         if (instance.isDragging || instance.isResizing) {
-          instance.handleMouseMoveRectangle(event);
+          instance.isDragging = true;
         } else {
           handleMouseMoveCamera(event, positionState, setPositionState, zoom);
         }
@@ -121,10 +169,14 @@ function App() {
   useEffect(() => {
     const handleDown = (event) => {
       event.preventDefault();
-      const rectIndex = rectangles.findIndex(r => event.target.classList.contains(`rectangle-${r.id}`));
-      if (rectIndex !== -1) {
-        setActiveRectangle(rectIndex);
-        rectangleInstances[rectIndex].handleMouseDownRectangle(event);
+      // Find the rectangle that matches the event target's class
+      const rect = rectangles.find(r => event.target.classList.contains(`rectangle-${r.id}`));
+      if (rect) {
+        const rectIndex = rectangleInstances.findIndex(instance => instance.id === rect.id);
+        if (rectIndex !== -1) {
+          setActiveRectangle(rectIndex);
+          rectangleInstances[rectIndex].isDragging = true;
+        }
       } else {
         handleMouseDownCamera(event, setPositionState);
       }
@@ -146,7 +198,7 @@ function App() {
       if (activeRectangle !== null) {
         const instance = rectangleInstances[activeRectangle];
         if (instance.isDragging || instance.isResizing) {
-          instance.handleMouseUpRectangle();
+          instance.isDragging = false;
         }
         setActiveRectangle(null);
       } else if (isCameraDragging) {
@@ -194,37 +246,25 @@ function App() {
             }}
           />
 
-          {rectangles.map((rect, index) => (
+          {rectangles.map((rect) => (
             <React.Fragment key={rect.id}>
-              <animated.div
-                className={`rectangle rectangle-${rect.id} ${rectangleInstances[index].isDragging ? 'dragging' : ''} ${rectangleInstances[index].isResizing ? 'resizing' : ''}`}
-                style={{
-                  transform: rectangleInstances[index].rectangleProps.x.to((x) => {
-                    const relativePos = rectangleInstances[index].getRelativePosition({
-                      x: rectangleInstances[index].rectangleProps.x.get(),
-                      y: rectangleInstances[index].rectangleProps.y.get(),
-                    });
-                    return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleInstances[index].absoluteRectanglePosition.x) / 10}deg)`;
-                  }),
-                  height: rectangleInstances[index].rectangleProps.height,
-                  position: 'absolute',
-                }}
+              <Rectangle
+                key={rect.id}
+                viewportState={viewportState}
+                zoom={zoom}
+                centerSectionRef={centerSectionRef}
+                rect={rect}
+                adjustedMousePosition={adjustedMousePosition}
+                gridSize={gridSize}
+                startX={startX}
+                allRectangles={rectangles}
+                updatedRectangleData={updatedRectangleData}
+                setUpdatedRectangleData={setUpdatedRectangleData}
+                getClientXY={getClientXY}
+                isDragging={rectangleInstances.find(r => r.id === rect.id).isDragging}
               />
             </React.Fragment>
           ))}
-
-          {activeRectangle !== null && rectangleInstances[activeRectangle].showGhost && (
-            <div
-              className="ghost"
-              style={{
-                left: `${0}px`,
-                top: `${centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleInstances[activeRectangle].rectangleProps.height.get(),
-                  Math.max(0, Math.round(rectangleInstances[activeRectangle].getRelativePosition(rectangleInstances[activeRectangle].absoluteRectanglePosition).y / gridSize) * gridSize)) : 0}px`,
-                position: 'absolute',
-                height: rectangleInstances[activeRectangle].rectangleProps.height.get()
-              }}
-            />
-          )}
 
           {/* To keep track of the position of the mouse in a window with zoom equal to 1 */}
           <div ref={mouseFollowerRef} style={{ position: 'absolute', pointerEvents: 'none' }} />
