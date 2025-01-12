@@ -20,92 +20,36 @@ function App() {
     setPositionState
   } = Camera(getClientXY);
 
-  // Multiple rectangles with independent states
-  const [rectangles, setRectangles] = useState([
-    { id: 1, x: -75, y: 0, height: 50 },
-    { id: 2, x: -75, y: 100, height: 50 },
-    { id: 3, x: -350, y: 200, height: 100 },
-    { id: 4, x: 140, y: 150, height: 80 },
-  ]);
-
-  const [updatedRectangleData, setUpdatedRectangleData] = useState(
-    rectangles.map(rect => ({
-      id: rect.id,
-      absolutePosition: { x: rect.x, y: rect.y },
-      height: rect.height,
-    }))
-  );
+  // State to manage rectangles
+  const [rectangles, setRectangles] = useState([]);
+  const [activeRectangle, setActiveRectangle] = useState(null);
+  const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
 
   const gridSize = 25;
   const startX = -75;
-
-  const [activeRectangle, setActiveRectangle] = useState(null);
   const mouseFollowerRef = useRef(null);
-  const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
-
-  const rectangleInstances = useRef(
-    rectangles.map((rect) => ({
-      id: rect.id,
-      isDragging: false,
-      isResizing: false,
-      showGhost: false,
-      rectangleProps: {
-        height: {
-          get: () => rect.height,
-        },
-      },
-      getRelativePosition: (position) => position,
-      absoluteRectanglePosition: { x: rect.x, y: rect.y },
-    }))
-  ).current;
 
   // Handle key press to create a new rectangle
   useEffect(() => {
     const handleKeyPress = (event) => {
-      if (event.key === 'b' || event.key === 'B') {
+      if (event.key.toLowerCase() === 'b') {
         const newRectangle = {
           id: rectangles.length + 1,
           x: -100,
           y: -100,
           height: 50,
-        };
-
-        setRectangles(prevRectangles => [
-          ...prevRectangles,
-          newRectangle
-        ]);
-
-        rectangleInstances.push({
-          id: newRectangle.id,
           isDragging: false,
           isResizing: false,
           showGhost: false,
-          rectangleProps: {
-            height: {
-              get: () => newRectangle.height,
-            },
-          },
-          getRelativePosition: (position) => position,
-          absoluteRectanglePosition: { x: newRectangle.x, y: newRectangle.y },
-        });
+        };
 
-        setUpdatedRectangleData(prevData => [
-          ...prevData,
-          {
-            id: newRectangle.id,
-            absolutePosition: { x: newRectangle.x, y: newRectangle.y },
-            height: newRectangle.height,
-          }
-        ]);
+        setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [rectangles, rectangleInstances, setUpdatedRectangleData]);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [rectangles]);
 
   // Helper function to get clientX and clientY
   function getClientXY(event) {
@@ -119,9 +63,8 @@ function App() {
         clientX: event.clientX,
         clientY: event.clientY,
       };
-    } else {
-      return null;
     }
+    return null;
   }
 
   // Update position on touch/mouse move
@@ -144,7 +87,7 @@ function App() {
       }
 
       if (activeRectangle !== null) {
-        const instance = rectangleInstances[activeRectangle];
+        const instance = rectangles[activeRectangle];
         if (instance.isDragging || instance.isResizing) {
           instance.isDragging = true;
         } else {
@@ -163,7 +106,7 @@ function App() {
       window.removeEventListener('mousemove', handleMoveWrapper);
       window.removeEventListener('touchmove', handleMoveWrapper);
     };
-  }, [activeRectangle, rectangleInstances, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef]);
+  }, [activeRectangle, rectangles, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef]);
 
   // Handle touch/mouse down to start dragging
   useEffect(() => {
@@ -172,10 +115,14 @@ function App() {
       // Find the rectangle that matches the event target's class
       const rect = rectangles.find(r => event.target.classList.contains(`rectangle-${r.id}`));
       if (rect) {
-        const rectIndex = rectangleInstances.findIndex(instance => instance.id === rect.id);
+        const rectIndex = rectangles.findIndex(instance => instance.id === rect.id);
         if (rectIndex !== -1) {
           setActiveRectangle(rectIndex);
-          rectangleInstances[rectIndex].isDragging = true;
+          setRectangles(prevRectangles => {
+            const newRectangles = [...prevRectangles];
+            newRectangles[rectIndex].isDragging = true;
+            return newRectangles;
+          });
         }
       } else {
         handleMouseDownCamera(event, setPositionState);
@@ -189,17 +136,18 @@ function App() {
       window.removeEventListener('touchstart', handleDown);
       window.removeEventListener('mousedown', handleDown);
     };
-  }, [rectangleInstances, rectangles, handleMouseDownCamera, setPositionState]);
+  }, [rectangles, handleMouseDownCamera, setPositionState]);
 
   // Handle touch/mouse up to stop dragging
   useEffect(() => {
     const handleUp = (event) => {
       event.preventDefault();
       if (activeRectangle !== null) {
-        const instance = rectangleInstances[activeRectangle];
-        if (instance.isDragging || instance.isResizing) {
-          instance.isDragging = false;
-        }
+        setRectangles(prevRectangles => {
+          const newRectangles = [...prevRectangles];
+          newRectangles[activeRectangle].isDragging = false;
+          return newRectangles;
+        });
         setActiveRectangle(null);
       } else if (isCameraDragging) {
         handleMouseUpCamera(positionState, setPositionState);
@@ -217,7 +165,8 @@ function App() {
       window.removeEventListener('touchcancel', handleUp);
       window.removeEventListener('mouseleave', handleUp);
     };
-  }, [activeRectangle, rectangleInstances, isCameraDragging, handleMouseUpCamera, positionState, setPositionState]);
+  }, [activeRectangle, rectangles, isCameraDragging, handleMouseUpCamera, positionState, setPositionState]);
+
 
   return (
     <div className="App">
@@ -257,11 +206,10 @@ function App() {
                 adjustedMousePosition={adjustedMousePosition}
                 gridSize={gridSize}
                 startX={startX}
-                allRectangles={rectangles}
-                updatedRectangleData={updatedRectangleData}
-                setUpdatedRectangleData={setUpdatedRectangleData}
+                rectangles={rectangles}
+                setRectangles={setRectangles}
                 getClientXY={getClientXY}
-                isDragging={rectangleInstances.find(r => r.id === rect.id).isDragging}
+                isDragging={rect.isDragging}
               />
             </React.Fragment>
           ))}
