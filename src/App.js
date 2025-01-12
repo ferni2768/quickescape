@@ -1,10 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { animated } from '@react-spring/web';
 import './App.css';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
+import { useController } from '../src/Controller';
 
 function App() {
+
+  const {
+    rectangles,
+    setRectangles,
+    activeRectangle,
+    setActiveRectangle,
+    adjustedMousePosition,
+    setAdjustedMousePosition,
+    gridSize,
+    getClientXY,
+  } = useController();
 
   const {
     viewportState,
@@ -20,52 +32,8 @@ function App() {
     setPositionState
   } = Camera(getClientXY);
 
-  // State to manage rectangles
-  const [rectangles, setRectangles] = useState([]);
-  const [activeRectangle, setActiveRectangle] = useState(null);
-  const [adjustedMousePosition, setAdjustedMousePosition] = useState(0);
-
-  const gridSize = 25;
   const startX = -75;
   const mouseFollowerRef = useRef(null);
-
-  // Handle key press to create a new rectangle
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      if (event.key.toLowerCase() === 'b') {
-        const newRectangle = {
-          id: rectangles.length + 1,
-          x: -100,
-          y: -100,
-          height: 50,
-          isDragging: false,
-          isResizing: false,
-          showGhost: false,
-        };
-
-        setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [rectangles]);
-
-  // Helper function to get clientX and clientY
-  function getClientXY(event) {
-    if (event.touches && event.touches.length > 0) {
-      return {
-        clientX: event.touches[0].clientX,
-        clientY: event.touches[0].clientY,
-      };
-    } else if (event.clientX !== undefined && event.clientY !== undefined) {
-      return {
-        clientX: event.clientX,
-        clientY: event.clientY,
-      };
-    }
-    return null;
-  }
 
   // Update position on touch/mouse move
   useEffect(() => {
@@ -106,7 +74,7 @@ function App() {
       window.removeEventListener('mousemove', handleMoveWrapper);
       window.removeEventListener('touchmove', handleMoveWrapper);
     };
-  }, [activeRectangle, rectangles, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef]);
+  }, [activeRectangle, rectangles, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef, getClientXY, setAdjustedMousePosition]);
 
   // Handle touch/mouse down to start dragging
   useEffect(() => {
@@ -136,7 +104,7 @@ function App() {
       window.removeEventListener('touchstart', handleDown);
       window.removeEventListener('mousedown', handleDown);
     };
-  }, [rectangles, handleMouseDownCamera, setPositionState]);
+  }, [rectangles, handleMouseDownCamera, setPositionState, setActiveRectangle, setRectangles]);
 
   // Handle touch/mouse up to stop dragging
   useEffect(() => {
@@ -165,7 +133,7 @@ function App() {
       window.removeEventListener('touchcancel', handleUp);
       window.removeEventListener('mouseleave', handleUp);
     };
-  }, [activeRectangle, rectangles, isCameraDragging, handleMouseUpCamera, positionState, setPositionState]);
+  }, [activeRectangle, rectangles, isCameraDragging, handleMouseUpCamera, positionState, setPositionState, setActiveRectangle, setRectangles]);
 
 
   return (
