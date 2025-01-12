@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 export const useController = () => {
     const [rectangles, setRectangles] = useState([]);
@@ -14,27 +14,20 @@ export const useController = () => {
         return { clientX: event.clientX, clientY: event.clientY };
     }, []);
 
-    // Handle key press to create a new rectangle
-    useEffect(() => {
-        const handleKeyPress = (event) => {
-            if (event.key.toLowerCase() === 'b') {
-                const newRectangle = {
-                    id: rectangles.length + 1,
-                    x: -100,
-                    y: -100,
-                    height: 50,
-                    isDragging: false,
-                    isResizing: false,
-                    showGhost: false,
-                };
-
-                setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
-            }
+    // Function to create a new rectangle
+    const createRectangle = (x, y, height) => {
+        const newRectangle = {
+            id: rectangles.length + 1,
+            x: x,
+            y: y,
+            height: height,
+            isDragging: true,
+            isResizing: false,
+            showGhost: false,
         };
-
-        window.addEventListener('keydown', handleKeyPress);
-        return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [rectangles]);
+        setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
+        setActiveRectangle(newRectangle.id - 1);
+    };
 
 
     return {
@@ -45,6 +38,7 @@ export const useController = () => {
         adjustedMousePosition,
         setAdjustedMousePosition,
         gridSize,
-        getClientXY
+        getClientXY,
+        createRectangle
     };
 };

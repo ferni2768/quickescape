@@ -4,6 +4,7 @@ import './App.css';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
+import Button from './components/Button';
 
 function App() {
 
@@ -16,6 +17,7 @@ function App() {
     setAdjustedMousePosition,
     gridSize,
     getClientXY,
+    createRectangle
   } = useController();
 
   const {
@@ -46,7 +48,7 @@ function App() {
 
       if (mouseFollowerRef.current && centerSectionRef.current) {
         const cameraRect = centerSectionRef.current.getBoundingClientRect();
-        mouseFollowerRef.current.style.left = `${clientX - cameraRect.left}px`;
+        mouseFollowerRef.current.style.left = `${clientX - cameraRect.left - 47.5 * zoom}px`;
         mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
 
         // Calculate adjusted position
@@ -82,6 +84,8 @@ function App() {
       event.preventDefault();
       // Find the rectangle that matches the event target's class
       const rect = rectangles.find(r => event.target.classList.contains(`rectangle-${r.id}`));
+      const UI = event.target.classList.contains('UI') ? event.target : null;
+
       if (rect) {
         const rectIndex = rectangles.findIndex(instance => instance.id === rect.id);
         if (rectIndex !== -1) {
@@ -92,7 +96,7 @@ function App() {
             return newRectangles;
           });
         }
-      } else {
+      } else if (!UI) {
         handleMouseDownCamera(event, setPositionState);
       }
     };
@@ -138,6 +142,7 @@ function App() {
 
   return (
     <div className="App">
+      <Button createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} />
       <animated.div
         className="room"
         style={{
