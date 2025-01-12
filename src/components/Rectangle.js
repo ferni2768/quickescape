@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 
-const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX, rectangles, setRectangles, getClientXY, isDragging }) => {
+const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX,
+    rectangles, setRectangles, getClientXY, isDragging, color }) => {
 
     const [state, setState] = useState(0);
     const [isResizing, setIsResizing] = useState(false);
@@ -217,6 +218,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                     }),
                     height: rectangleProps.height,
                     position: 'absolute',
+                    backgroundColor: color
                 }}
             />
 
@@ -227,7 +229,9 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                         top: `${centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
                             Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : 0}px`,
                         position: 'absolute',
-                        height: rectangleState.height
+                        height: rectangleState.height,
+                        backgroundColor: color,
+                        opacity: 0.5
                     }}
                 />
             )}

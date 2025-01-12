@@ -4,7 +4,7 @@ import './App.css';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
-import Button from './components/Button';
+import UI from './components/UI';
 
 function App() {
 
@@ -142,7 +142,7 @@ function App() {
 
   return (
     <div className="App">
-      <Button createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} />
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} />
       <animated.div
         className="room"
         style={{
@@ -183,6 +183,7 @@ function App() {
                 setRectangles={setRectangles}
                 getClientXY={getClientXY}
                 isDragging={rect.isDragging}
+                color={rect.color}
               />
             </React.Fragment>
           ))}
