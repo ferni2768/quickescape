@@ -14,6 +14,7 @@ const Button = ({ id, text, color, createRectangle, zoom, mouseFollowerRef }) =>
             className="UI ui-button"
             style={{ backgroundColor: color }}
             onMouseDown={handleButtonClick}
+            onTouchStart={handleButtonClick}
         >
             {text}
         </button>

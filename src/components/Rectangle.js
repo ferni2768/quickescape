@@ -1,12 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 
 const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX,
     rectangles, setRectangles, getClientXY, isDragging, color }) => {
 
+    // State variables for dragging and resizing
     const [state, setState] = useState(0);
     const [isResizing, setIsResizing] = useState(false);
     const [showGhost, setShowGhost] = useState(false);
+
+    // State variables for rectangle text editing
+    const [startTime, setStartTime] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [text, setText] = useState("");
+    const [editDistance, setEditDistance] = useState(0);
+    const textareaRef = useRef(null);
 
     // State object with state variables
     const [rectangleState, setRectangleState] = useState({
@@ -102,6 +110,10 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                     },
                 }));
             }
+
+            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
+            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
+            setEditDistance(Math.sqrt(dx * dx + dy * dy));
         } else if (state === 1) {
 
             if (event.touches && event.touches.length > 1) {
@@ -203,6 +215,31 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
         }));
     }, [rectangleState.absolutePosition, zoom, viewportState.cameraPosition, getRelativePosition]);
 
+    // Handle click outside to exit editing mode
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isEditing && !event.target.closest(`.rectangle-${rect.id}`)) {
+                setIsEditing(false);
+            }
+        };
+        window.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            window.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isEditing, rect.id]);
+
+    // Focus on the textarea when editing
+    useEffect(() => {
+        if (isEditing && textareaRef.current) {
+            const textarea = textareaRef.current;
+            textarea.focus();
+            // Move the cursor to the end of the text
+            textarea.setSelectionRange(text.length, text.length);
+        }
+    }, [isEditing, text.length]);
+
 
     return (
         <div>
@@ -218,9 +255,39 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                     }),
                     height: rectangleProps.height,
                     position: 'absolute',
-                    backgroundColor: color
+                    backgroundColor: color,
+                    zIndex: isDragging ? '100' : '10'
                 }}
-            />
+                onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
+                onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
+                onMouseUp={() => {
+                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
+                    setStartTime(null);
+                    setEditDistance(0);
+                }}
+                onTouchEnd={() => {
+                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
+                    setStartTime(null);
+                    setEditDistance(0);
+                }}
+            >
+                {isEditing ? (
+                    <textarea
+                        className="UI rectangle-text-area"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        ref={textareaRef}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
+                        spellCheck="false"
+                        autoFocus
+                    />
+                ) : (
+                    <div className="rectangle-text"> {text} </div>
+                )}
+            </animated.div>
 
             {isDragging && showGhost && (
                 <div className="ghost"
@@ -231,7 +298,8 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                         position: 'absolute',
                         height: rectangleState.height,
                         backgroundColor: color,
-                        opacity: 0.5
+                        opacity: 0.5,
+                        zIndex: 15
                     }}
                 />
             )}
