@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 
 const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX,
-    rectangles, setRectangles, getClientXY, isDragging, color }) => {
+    rectangles, setRectangles, getClientXY, isDragging, color, icon }) => {
 
     // State variables for dragging and resizing
     const [state, setState] = useState(0);
@@ -271,6 +271,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                     setEditDistance(0);
                 }}
             >
+                <div className='rectangle-header'> {icon} 16:00-20:00 </div>
                 {isEditing ? (
                     <textarea
                         className="UI rectangle-text-area"

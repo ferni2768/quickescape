@@ -1,12 +1,14 @@
 import React from 'react';
 import '../App.css';
-import Button from './Button'; // Import the Button component
+import Button from './Button';
+import { Home, Star, Favorite } from '@mui/icons-material';
+
 
 const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
     const buttons = [
-        { id: 1, text: 'Button 1', color: '#4CAF50' },
-        { id: 2, text: 'Button 2', color: '#2196F3' },
-        { id: 3, text: 'Button 3', color: '#f44336' },
+        { id: 1, text: '1', color: '#4CAF50', icon: <Home /> },
+        { id: 2, text: '2', color: '#2196F3', icon: <Star /> },
+        { id: 3, text: '3', color: '#f44336', icon: <Favorite /> },
     ];
 
     return (
@@ -22,6 +24,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
                             createRectangle={createRectangle}
                             zoom={zoom}
                             mouseFollowerRef={mouseFollowerRef}
+                            icon={button.icon}
                         />
                     ))
                 }

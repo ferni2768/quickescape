@@ -1,11 +1,11 @@
 import React from 'react';
 import '../App.css';
 
-const Button = ({ id, text, color, createRectangle, zoom, mouseFollowerRef }) => {
+const Button = ({ id, text, color, createRectangle, zoom, mouseFollowerRef, icon }) => {
     const handleButtonClick = () => {
         // Calculate the position relative to the room
         const { offsetLeft, offsetTop } = mouseFollowerRef.current;
-        createRectangle((offsetLeft - 75 * zoom) / zoom, (offsetTop - 25 * zoom) / zoom, 50, color);
+        createRectangle((offsetLeft - 75 * zoom) / zoom, (offsetTop - 25 * zoom) / zoom, 50, color, icon);
     };
 
     return (
@@ -17,6 +17,7 @@ const Button = ({ id, text, color, createRectangle, zoom, mouseFollowerRef }) =>
             onTouchStart={handleButtonClick}
         >
             {text}
+            <div style={{ position: 'relative', top: 0, right: 0, pointerEvents: 'none' }}> {icon} </div>
         </button>
     );
 };

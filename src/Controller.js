@@ -15,7 +15,7 @@ export const useController = () => {
     }, []);
 
     // Function to create a new rectangle
-    const createRectangle = (x, y, height, color) => {
+    const createRectangle = (x, y, height, color, icon) => {
         const newRectangle = {
             id: rectangles.length + 1,
             x: x,
@@ -24,7 +24,8 @@ export const useController = () => {
             isDragging: true,
             isResizing: false,
             showGhost: false,
-            color: color
+            color: color,
+            icon: icon
         };
         setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
         setActiveRectangle(newRectangle.id - 1);

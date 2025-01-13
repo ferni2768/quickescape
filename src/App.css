@@ -33,7 +33,7 @@
 
 .rectangle-text-area {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 30px);
     background-color: transparent;
     border: none;
     color: white;
@@ -48,11 +48,14 @@
     white-space: pre-wrap;
     overflow-wrap: break-word;
     line-height: 1.5;
+
+    position: relative;
+    overflow: hidden;
 }
 
 .rectangle-text {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 30px);
     pointer-events: none;
     color: white;
     display: flex;
@@ -64,6 +67,20 @@
     overflow: hidden;
     padding: 2px;
     line-height: 1.5;
+    position: relative;
+    overflow: hidden;
+}
+
+.rectangle-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    font-size: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .rectangle.dragging {

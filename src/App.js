@@ -184,6 +184,7 @@ function App() {
                 getClientXY={getClientXY}
                 isDragging={rect.isDragging}
                 color={rect.color}
+                icon={rect.icon}
               />
             </React.Fragment>
           ))}
