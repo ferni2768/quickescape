@@ -31,6 +31,16 @@
     overflow-wrap: anywhere;
 }
 
+.rectangle.size-1,
+.ghost.size-1 {
+    width: 150px;
+}
+
+.rectangle.size-2,
+.ghost.size-2 {
+    width: 300px;
+}
+
 .rectangle-text-area {
     width: 100%;
     height: calc(100% - 30px);

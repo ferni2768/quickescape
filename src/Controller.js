@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+export const RECTANGLE_SIZES = { 1: 150, 2: 300 };
 
 export const useController = () => {
     const [rectangles, setRectangles] = useState([]);
@@ -15,7 +16,7 @@ export const useController = () => {
     }, []);
 
     // Function to create a new rectangle
-    const createRectangle = (x, y, height, color, icon, group) => {
+    const createRectangle = (x, y, height, color, size, icon, group) => {
         const newRectangle = {
             id: rectangles.length + 1,
             x: x,
@@ -25,6 +26,7 @@ export const useController = () => {
             isResizing: false,
             showGhost: false,
             color: color,
+            size: size,
             icon: icon,
             isNote: group === 0
         };

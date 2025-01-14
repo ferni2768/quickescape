@@ -1,13 +1,23 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated } from '@react-spring/web';
+import { RECTANGLE_SIZES } from '../Controller';
 
-const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX,
-    rectangles, setRectangles, getClientXY, isDragging, color, icon, isNote }) => {
+const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize,
+    rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote }) => {
+
+    // State object with state variables
+    const [rectangleState, setRectangleState] = useState({
+        absolutePosition: { x: rect.x, y: rect.y },
+        initialDragPosition: { x: rect.x, y: rect.y },
+        height: rect.height || 50
+    });
 
     // State variables for dragging and resizing
     const [state, setState] = useState(0);
     const [isResizing, setIsResizing] = useState(false);
     const [showGhost, setShowGhost] = useState(false);
+    const rectangleWidth = RECTANGLE_SIZES[size];
+    const startX = -(rectangleWidth / 2);
 
     // State variables for rectangle text editing
     const [startTime, setStartTime] = useState(null);
@@ -15,13 +25,6 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
     const [text, setText] = useState("");
     const [editDistance, setEditDistance] = useState(0);
     const textareaRef = useRef(null);
-
-    // State object with state variables
-    const [rectangleState, setRectangleState] = useState({
-        absolutePosition: { x: rect.x, y: rect.y },
-        initialDragPosition: { x: rect.x, y: rect.y },
-        height: rect.height || 50,
-    });
 
     // Spring animation for the rectangle
     const rectangleProps = useSpring({
@@ -39,7 +42,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
 
     // Utility to check if two rectangles overlap
     const doesOverlap = useCallback((id, customPos1, customHeight) => {
-        if (rectangles[id - 1].x !== startX) return false;
+        if (rectangles[id - 1].x !== -RECTANGLE_SIZES[rectangles[id - 1].size] / 2) return false;
 
         const thereshold = 5;
         const pos1 = customPos1 !== undefined ? customPos1 : rectangleState.absolutePosition.y;
@@ -172,7 +175,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 if (showGhost && !overlapping) {
                     const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
                         Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
-                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY } }));
+                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - rectangleWidth / 2, y: snappedY } }));
                 } else if (showGhost && overlapping) {
                     setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
                 }
@@ -194,7 +197,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
-        const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 250;
+        const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - (rectangleWidth + 100);
         const centerSectionEnd = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 + 100;
         if (!isResizing && rectangleState.absolutePosition.x > centerSectionStart && rectangleState.absolutePosition.x < centerSectionEnd
             && rectangleState.absolutePosition.y >= -gridSize * 7 && rectangleState.absolutePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - rectangleState.height + 7 * gridSize : 0)) {
@@ -244,7 +247,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
     return (
         <div>
             <animated.div
-                className={`rectangle rectangle-${rect.id} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+                className={`rectangle rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
                 style={{
                     transform: rectangleProps.x.to((x) => {
                         const relativePos = getRelativePosition({
@@ -291,7 +294,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
             </animated.div>
 
             {!isNote && isDragging && showGhost && (
-                <div className="ghost"
+                <div className={`ghost size-${size}`}
                     style={{
                         left: `${0}px`,
                         top: `${centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,

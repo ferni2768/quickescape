@@ -8,9 +8,9 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
     const startID = 1;
 
     const buttons = [
-        { id: startID, text: '1', color: '#4CAF50', icon: <Home />, group: 1 },
-        { id: startID + 1, text: '2', color: '#2196F3', icon: <Star />, group: 1 },
-        { id: startID + 2, text: '3', color: '#f44336', icon: <Favorite />, group: 1 },
+        { id: startID, text: '1', color: '#4CAF50', size: 1, icon: <Home />, group: 1 },
+        { id: startID + 1, text: '2', color: '#2196F3', size: 2, icon: <Star />, group: 1 },
+        { id: startID + 2, text: '3', color: '#f44336', size: 1, icon: <Favorite />, group: 1 },
     ];
 
     return (
@@ -23,6 +23,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
                             id={button.id}
                             text={button.text}
                             color={button.color}
+                            size={button.size}
                             createRectangle={createRectangle}
                             zoom={zoom}
                             mouseFollowerRef={mouseFollowerRef}
@@ -38,6 +39,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
                         id={0}
                         text={'Note'}
                         color={'#DAA520'}
+                        size={1}
                         createRectangle={createRectangle}
                         zoom={zoom}
                         mouseFollowerRef={mouseFollowerRef}

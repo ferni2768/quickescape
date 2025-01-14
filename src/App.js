@@ -34,7 +34,6 @@ function App() {
     setPositionState
   } = Camera(getClientXY);
 
-  const startX = -75;
   const mouseFollowerRef = useRef(null);
 
   // Update position on touch/mouse move
@@ -178,12 +177,12 @@ function App() {
                 rect={rect}
                 adjustedMousePosition={adjustedMousePosition}
                 gridSize={gridSize}
-                startX={startX}
                 rectangles={rectangles}
                 setRectangles={setRectangles}
                 getClientXY={getClientXY}
                 isDragging={rect.isDragging}
                 color={rect.color}
+                size={rect.size}
                 icon={rect.icon}
                 isNote={rect.isNote}
               />
