@@ -56,7 +56,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
         const bot2 = top2 + otherRect.height - thereshold;
 
         return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
-    }, [rectangleState.absolutePosition, rectangleState.height, rectangles, startX]);
+    }, [rectangleState.absolutePosition, rectangleState.height, rectangles]);
 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
@@ -205,7 +205,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
         } else {
             setShowGhost(false);
         }
-    }, [rectangleState.absolutePosition, viewportState, isResizing, gridSize, centerSectionRef, rectangleState.height]);
+    }, [rectangleState.absolutePosition, viewportState, isResizing, gridSize, centerSectionRef, rectangleState.height, rectangleWidth]);
 
     // Update rectangle position when zooming
     useEffect(() => {
