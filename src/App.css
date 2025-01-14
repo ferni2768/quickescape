@@ -103,7 +103,8 @@
 
 .center-section {
     width: 100px;
-    height: 3000px;
+    /* 3 days for now */
+    height: 5760px;
     background-color: rgba(0, 0, 0, 0.1);
     position: absolute;
 }

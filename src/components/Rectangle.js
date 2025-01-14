@@ -243,6 +243,28 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
         }
     }, [isEditing, text.length]);
 
+    // Convert grid position to time
+    const gridPositionToTime = (position) => {
+        const totalMinutes = position / gridSize * 15;
+        const days = Math.floor(totalMinutes / (24 * 60));
+        const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+        const minutes = totalMinutes % 60;
+        return { days, hours, minutes };
+    };
+
+    // Format time as HH:MM
+    const formatTime = ({ hours, minutes }) => {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+
+    // Calculate duration in HH:MM
+    const calculateDuration = (height) => {
+        const totalMinutes = height / gridSize * 15;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours}:${minutes.toString().padStart(2, '0')}`;
+    };
+
 
     return (
         <div>
@@ -274,7 +296,14 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                     setEditDistance(0);
                 }}
             >
-                <div className='rectangle-header'> {icon} 16:00-20:00 </div>
+                <div className='rectangle-header'>
+                    {icon}
+                    {showGhost ?
+                        `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}-${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize + rectangleState.height))}` :
+                        (rectangleState.absolutePosition.x === startX ?
+                            `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
+                            `${calculateDuration(rectangleState.height)}h`)}
+                </div>
                 {isEditing ? (
                     <textarea
                         className="UI rectangle-text-area"
