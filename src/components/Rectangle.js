@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 
 const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize, startX,
-    rectangles, setRectangles, getClientXY, isDragging, color, icon }) => {
+    rectangles, setRectangles, getClientXY, isDragging, color, icon, isNote }) => {
 
     // State variables for dragging and resizing
     const [state, setState] = useState(0);
@@ -138,7 +138,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 const newHeight = Math.max(20, Math.min(300, Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize));
                 var canResize = true;
 
-                if (rectangleState.absolutePosition.x === startX) {
+                if (rectangleState.absolutePosition.x === startX && !isNote) {
                     for (let i = 1; i < rectangles.length + 1; i++) {
                         if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
                             canResize = false;
@@ -149,7 +149,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, rectangles, rectangleState, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, startX, rect.id]);
+    }, [centerSectionRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, startX, rect.id]);
 
     // Handle mouse/touch down/up for the rectangle
     useEffect(() => {
@@ -157,7 +157,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
             window.addEventListener('mousemove', handleMouseRectangle);
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
         } else {
-            if (!isResizing) {
+            if (!isResizing && !isNote) {
                 var overlapping = false;
 
                 if (showGhost) {
@@ -256,7 +256,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                     height: rectangleProps.height,
                     position: 'absolute',
                     backgroundColor: color,
-                    zIndex: isDragging ? '100' : '10'
+                    zIndex: isNote ? '99' : (isDragging ? '100' : '10')
                 }}
                 onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
                 onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
@@ -290,7 +290,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 )}
             </animated.div>
 
-            {isDragging && showGhost && (
+            {!isNote && isDragging && showGhost && (
                 <div className="ghost"
                     style={{
                         left: `${0}px`,

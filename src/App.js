@@ -185,6 +185,7 @@ function App() {
                 isDragging={rect.isDragging}
                 color={rect.color}
                 icon={rect.icon}
+                isNote={rect.isNote}
               />
             </React.Fragment>
           ))}

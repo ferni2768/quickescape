@@ -133,6 +133,10 @@
     border-bottom-right-radius: 20px;
 }
 
+.UI {
+    pointer-events: all;
+}
+
 .ui-container {
     position: fixed;
     top: 0;
@@ -146,6 +150,6 @@
     pointer-events: none;
 }
 
-.UI {
-    pointer-events: all;
+.note-button {
+    margin-top: 20px;
 }

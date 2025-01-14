@@ -5,10 +5,12 @@ import { Home, Star, Favorite } from '@mui/icons-material';
 
 
 const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
+    const startID = 1;
+
     const buttons = [
-        { id: 1, text: '1', color: '#4CAF50', icon: <Home /> },
-        { id: 2, text: '2', color: '#2196F3', icon: <Star /> },
-        { id: 3, text: '3', color: '#f44336', icon: <Favorite /> },
+        { id: startID, text: '1', color: '#4CAF50', icon: <Home />, group: 1 },
+        { id: startID + 1, text: '2', color: '#2196F3', icon: <Star />, group: 1 },
+        { id: startID + 2, text: '3', color: '#f44336', icon: <Favorite />, group: 1 },
     ];
 
     return (
@@ -25,9 +27,27 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
                             zoom={zoom}
                             mouseFollowerRef={mouseFollowerRef}
                             icon={button.icon}
+                            group={button.group}
                         />
                     ))
                 }
+
+                <div className="note-button">
+                    <Button
+                        key={0}
+                        id={0}
+                        text={'Note'}
+                        color={'#DAA520'}
+                        createRectangle={createRectangle}
+                        zoom={zoom}
+                        mouseFollowerRef={mouseFollowerRef}
+                        icon={<Home />}
+                        group={0}
+                    />
+
+                </div>
+
+
             </div >
         </div >
     );
