@@ -1,31 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSpring } from '@react-spring/web';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSpring, animated } from '@react-spring/web';
+import { RECTANGLE_SIZES } from '../Controller';
 
-export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize,
-    startX, allRectangles, updatedRectangleData, setUpdatedRectangleData, getClientXY) {
-    const [isDragging, setIsDragging] = useState(false);
+const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize,
+    rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote }) => {
+
+    // State object with state variables
+    const [rectangleState, setRectangleState] = useState({
+        absolutePosition: { x: rect.x, y: rect.y },
+        initialDragPosition: { x: rect.x, y: rect.y },
+        height: rect.height || 50
+    });
+
+    // State variables for dragging and resizing
+    const [state, setState] = useState(0);
     const [isResizing, setIsResizing] = useState(false);
-
-    const [absoluteRectanglePosition, setAbsoluteRectanglePosition] = useState({
-        x: rect.x,
-        y: rect.y,
-    });
-
-    const [initialDragPosition, setInitialDragPosition] = useState({
-        x: rect.x,
-        y: rect.y,
-    });
-
-    const [height, setHeight] = useState(rect.height || 50);
     const [showGhost, setShowGhost] = useState(false);
+    const rectangleWidth = RECTANGLE_SIZES[size];
+    const startX = -(rectangleWidth / 2);
 
+    // State variables for rectangle text editing
+    const [startTime, setStartTime] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [text, setText] = useState("");
+    const [editDistance, setEditDistance] = useState(0);
+    const textareaRef = useRef(null);
+
+    // Spring animation for the rectangle
     const rectangleProps = useSpring({
-        x: absoluteRectanglePosition.x,
-        y: absoluteRectanglePosition.y,
-        height: height,
+        x: rectangleState.absolutePosition.x,
+        y: rectangleState.absolutePosition.y,
+        height: rectangleState.height,
         config: { mass: 1, tension: 170, friction: 26 },
     });
 
+    // State object with mouse position variables
     const [positionState, setPositionState] = useState({
         mousePosition: { x: 0, y: 0 },
         offset: { x: 0, y: 0 }
@@ -33,32 +42,30 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
 
     // Utility to check if two rectangles overlap
     const doesOverlap = useCallback((id, customPos1, customHeight) => {
-        if (updatedRectangleData[id - 1].absolutePosition.x !== startX) return false;
+        if (rectangles[id - 1].x !== -RECTANGLE_SIZES[rectangles[id - 1].size] / 2) return false;
 
         const thereshold = 5;
-
-        const pos1 = customPos1 !== undefined ? customPos1 : absoluteRectanglePosition.y;
-        const hei = customHeight !== undefined ? customHeight : height;
+        const pos1 = customPos1 !== undefined ? customPos1 : rectangleState.absolutePosition.y;
+        const hei = customHeight !== undefined ? customHeight : rectangleState.height;
 
         const top1 = pos1 + thereshold;
         const bot1 = top1 + hei - thereshold;
 
-        const otherRect = updatedRectangleData[id - 1];
-
-        const top2 = otherRect.absolutePosition.y + thereshold;
+        const otherRect = rectangles[id - 1];
+        const top2 = otherRect.y + thereshold;
         const bot2 = top2 + otherRect.height - thereshold;
 
         return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
-    }, [absoluteRectanglePosition, height, updatedRectangleData, startX]);
+    }, [rectangleState.absolutePosition, rectangleState.height, rectangles]);
 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
-        setUpdatedRectangleData((prevPositions) =>
-            prevPositions.map((r) =>
-                r.id === rect.id ? { ...r, absolutePosition: absoluteRectanglePosition, height: height } : r
+        setRectangles((prevRectangles) =>
+            prevRectangles.map((r) =>
+                r.id === rect.id ? { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height } : r
             )
         );
-    }, [absoluteRectanglePosition, height, rect.id, setUpdatedRectangleData]);
+    }, [rectangleState, rect.id, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -73,136 +80,235 @@ export function Rectangle(viewportState, zoom, centerSectionRef, rect, adjustedM
         [viewportState, centerSectionRef]
     );
 
-    // Handle mouse/touch down for the rectangle to start dragging or resizing
-    const handleMouseDownRectangle = useCallback((event) => {
-        const { clientX, clientY } = getClientXY(event);
-        const currentRectBottom = absoluteRectanglePosition.y + height;
-        setInitialDragPosition({ ...absoluteRectanglePosition });  // Store initial drag position
+    // Handle mouse/touch move for the rectangle to update its position and size
+    const handleMouseRectangle = useCallback((event) => {
+        event.preventDefault();
 
-        if (adjustedMousePosition >= currentRectBottom - 15 && adjustedMousePosition <= currentRectBottom) {
-            setIsResizing(true);
-            document.body.style.cursor = 'ns-resize';
-            setPositionState((prev) => ({
-                ...prev,
-                offset: {
-                    x: clientX - absoluteRectanglePosition.x,
-                    y: clientY - currentRectBottom,
-                },
-            }));
+        if (state === 0) {
+            setState(1);
+            event.stopPropagation();
+
+            const { clientX, clientY } = getClientXY(event);
+            const currentRectBottom = rectangleState.absolutePosition.y + rectangleState.height;
+            setRectangleState((prev) => ({ ...prev, initialDragPosition: { ...rectangleState.absolutePosition } }));
+
+            if (adjustedMousePosition >= currentRectBottom - 15 && adjustedMousePosition <= currentRectBottom) {
+                setIsResizing(true);
+                document.body.style.cursor = 'ns-resize';
+                setPositionState((prev) => ({
+                    ...prev,
+                    offset: {
+                        x: clientX - rectangleState.absolutePosition.x,
+                        y: clientY - currentRectBottom,
+                    },
+                }));
+            } else {
+                document.body.style.cursor = 'grabbing';
+                const relativeRectPos = getRelativePosition(rectangleState.absolutePosition);
+                setPositionState((prev) => ({
+                    ...prev,
+                    offset: {
+                        x: clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
+                        y: clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
+                    },
+                }));
+            }
+
+            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
+            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
+            setEditDistance(Math.sqrt(dx * dx + dy * dy));
+        } else if (state === 1) {
+
+            if (event.touches && event.touches.length > 1) {
+                setState(0);
+                return;
+            }
+
+            const { clientX, clientY } = getClientXY(event);
+            if (!isResizing) {
+                const newMousePosition = { x: clientX, y: clientY };
+                setPositionState((prev) => ({
+                    ...prev,
+                    mousePosition: newMousePosition,
+                }));
+                const newAbsolutePosition = {
+                    x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
+                    y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
+                };
+                setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
+            } else {
+                const newY = clientY - positionState.offset.y;
+                const newHeight = Math.max(20, Math.min(300, Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize));
+                var canResize = true;
+
+                if (rectangleState.absolutePosition.x === startX && !isNote) {
+                    for (let i = 1; i < rectangles.length + 1; i++) {
+                        if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
+                            canResize = false;
+                            break;
+                        }
+                    }
+                }
+                if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
+            }
+        }
+    }, [centerSectionRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, startX, rect.id]);
+
+    // Handle mouse/touch down/up for the rectangle
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseRectangle);
+            window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
         } else {
-            setIsDragging(true);
-            document.body.style.cursor = 'grabbing';
-            const relativeRectPos = getRelativePosition(absoluteRectanglePosition);
-            setPositionState((prev) => ({
-                ...prev,
-                offset: {
-                    x: clientX - (relativeRectPos.x - viewportState.cameraPosition.x) * zoom,
-                    y: clientY - (relativeRectPos.y - viewportState.cameraPosition.y) * zoom,
-                },
-            }));
-        }
-    }, [getRelativePosition, absoluteRectanglePosition, viewportState, zoom, height, adjustedMousePosition, getClientXY]);
+            if (!isResizing && !isNote) {
+                var overlapping = false;
 
-    // Handle mouse/touch up for the rectangle to stop dragging
-    const handleMouseUpRectangle = useCallback(() => {
-        if (isDragging) {
-            var overlapping = false;
-
-            if (showGhost) {
-                for (let i = 1; i < allRectangles.length + 1; i++) {
-                    if ((allRectangles[i - 1].id !== rect.id) && doesOverlap(i, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize)) {
-                        setAbsoluteRectanglePosition(initialDragPosition);
-                        overlapping = true;
-                        break;
+                if (showGhost) {
+                    for (let i = 1; i < rectangles.length + 1; i++) {
+                        if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
+                            overlapping = true;
+                            break;
+                        }
                     }
+                }
+
+                if (showGhost && !overlapping) {
+                    const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
+                        Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
+                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - rectangleWidth / 2, y: snappedY } }));
+                } else if (showGhost && overlapping) {
+                    setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
                 }
             }
 
-            if (showGhost && !overlapping) {
-                const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - height,
-                    Math.max(0, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(absoluteRectanglePosition.y / gridSize) * gridSize);
-                setAbsoluteRectanglePosition({ x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 75, y: snappedY });
-            } else if (overlapping) {
-                setAbsoluteRectanglePosition(initialDragPosition);
-            }
-
+            setIsResizing(false);
+            document.body.style.cursor = 'default';
+            window.removeEventListener('mousemove', handleMouseRectangle);
+            window.removeEventListener('touchmove', handleMouseRectangle);
+            setState(0);
         }
-        setIsDragging(false);
-        setIsResizing(false);
-        document.body.style.cursor = 'default';
-    }, [showGhost, absoluteRectanglePosition, viewportState, gridSize, doesOverlap, allRectangles, initialDragPosition, rect.id, isDragging, centerSectionRef, height]);
 
-    // Handle mouse/touch move for the rectangle to update its position
-    const handleMouseMoveRectangle = useCallback((event) => {
-        if (event.touches && event.touches.length > 1) {
-            handleMouseUpRectangle(event.touches[0]);
-            return;
-        }
-        const { clientX, clientY } = getClientXY(event);
-        if (isDragging) {
-            const newMousePosition = { x: clientX, y: clientY };
-            setPositionState((prev) => ({
-                ...prev,
-                mousePosition: newMousePosition,
-            }));
-            const newAbsolutePosition = {
-                x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
-                y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
-            };
-            setAbsoluteRectanglePosition(newAbsolutePosition);
-        } else if (isResizing) {
-            const newY = clientY - positionState.offset.y;
-            const newHeight = Math.max(20, Math.min(300, Math.round((newY - absoluteRectanglePosition.y) / gridSize) * gridSize));
-            var canResize = true;
-
-            if (absoluteRectanglePosition.x === startX) {
-                for (let i = 1; i < allRectangles.length + 1; i++) {
-                    if ((allRectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
-                        setHeight(height);
-                        canResize = false;
-                        break;
-                    }
-                }
-            }
-            if (canResize) setHeight(newHeight);
-        }
-    }, [isDragging, centerSectionRef, viewportState, zoom, positionState, isResizing, gridSize, allRectangles, absoluteRectanglePosition, height, doesOverlap, rect.id, startX, getClientXY, handleMouseUpRectangle]);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseRectangle);
+            window.removeEventListener('touchmove', handleMouseRectangle);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isDragging, rectangleState.initialDragPosition, rect.id]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
-        const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - 250;
+        const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - (rectangleWidth + 100);
         const centerSectionEnd = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 + 100;
-        if (!isResizing && absoluteRectanglePosition.x > centerSectionStart && absoluteRectanglePosition.x < centerSectionEnd
-            && absoluteRectanglePosition.y >= -gridSize * 7 && absoluteRectanglePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - height + 7 * gridSize : 0)) {
+        if (!isResizing && rectangleState.absolutePosition.x > centerSectionStart && rectangleState.absolutePosition.x < centerSectionEnd
+            && rectangleState.absolutePosition.y >= -gridSize * 7 && rectangleState.absolutePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - rectangleState.height + 7 * gridSize : 0)) {
             setShowGhost(true);
         } else {
             setShowGhost(false);
         }
-    }, [absoluteRectanglePosition, viewportState, isResizing, gridSize, centerSectionRef, height]);
+    }, [rectangleState.absolutePosition, viewportState, isResizing, gridSize, centerSectionRef, rectangleState.height, rectangleWidth]);
 
     // Update rectangle position when zooming
     useEffect(() => {
         setPositionState((prev) => ({
             ...prev,
             rectanglePosition: {
-                x: getRelativePosition(absoluteRectanglePosition).x * zoom - viewportState.cameraPosition.x,
-                y: getRelativePosition(absoluteRectanglePosition).y * zoom - viewportState.cameraPosition.y,
+                x: getRelativePosition(rectangleState.absolutePosition).x * zoom - viewportState.cameraPosition.x,
+                y: getRelativePosition(rectangleState.absolutePosition).y * zoom - viewportState.cameraPosition.y,
             },
         }));
-    }, [absoluteRectanglePosition, zoom, viewportState.cameraPosition, getRelativePosition]);
+    }, [rectangleState.absolutePosition, zoom, viewportState.cameraPosition, getRelativePosition]);
 
-    return {
-        rectangleProps,
-        positionState,
-        setPositionState,
-        handleMouseDownRectangle,
-        handleMouseUpRectangle,
-        handleMouseMoveRectangle,
-        getRelativePosition,
-        showGhost,
-        isDragging,
-        isResizing,
-        absoluteRectanglePosition,
-        height
-    };
-}
+    // Handle click outside to exit editing mode
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isEditing && !event.target.closest(`.rectangle-${rect.id}`)) {
+                setIsEditing(false);
+            }
+        };
+        window.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            window.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isEditing, rect.id]);
+
+    // Focus on the textarea when editing
+    useEffect(() => {
+        if (isEditing && textareaRef.current) {
+            const textarea = textareaRef.current;
+            textarea.focus();
+            // Move the cursor to the end of the text
+            textarea.setSelectionRange(text.length, text.length);
+        }
+    }, [isEditing, text.length]);
+
+
+    return (
+        <div>
+            <animated.div
+                className={`rectangle rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+                style={{
+                    transform: rectangleProps.x.to((x) => {
+                        const relativePos = getRelativePosition({
+                            x: rectangleProps.x.get(),
+                            y: rectangleProps.y.get(),
+                        });
+                        return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x) / 10}deg)`;
+                    }),
+                    height: rectangleProps.height,
+                    position: 'absolute',
+                    backgroundColor: color,
+                    zIndex: isNote ? '99' : (isDragging ? '100' : '10')
+                }}
+                onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
+                onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
+                onMouseUp={() => {
+                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
+                    setStartTime(null);
+                    setEditDistance(0);
+                }}
+                onTouchEnd={() => {
+                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
+                    setStartTime(null);
+                    setEditDistance(0);
+                }}
+            >
+                <div className='rectangle-header'> {icon} 16:00-20:00 </div>
+                {isEditing ? (
+                    <textarea
+                        className="UI rectangle-text-area"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        ref={textareaRef}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
+                        spellCheck="false"
+                        autoFocus
+                    />
+                ) : (
+                    <div className="rectangle-text"> {text} </div>
+                )}
+            </animated.div>
+
+            {!isNote && isDragging && showGhost && (
+                <div className={`ghost size-${size}`}
+                    style={{
+                        left: `${0}px`,
+                        top: `${centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
+                            Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : 0}px`,
+                        position: 'absolute',
+                        height: rectangleState.height,
+                        backgroundColor: color,
+                        opacity: 0.5,
+                        zIndex: 15
+                    }}
+                />
+            )}
+        </div>
+    );
+});
+
+export default Rectangle;
