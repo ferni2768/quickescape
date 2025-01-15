@@ -5,9 +5,9 @@ import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
 import UI from './components/UI';
-import DateRangePicker from './components/DateRangePicker';
+import DateRangePicker from './components/UI_buttons/DateRangePicker';
 import dayjs from 'dayjs';
-import DateLabels from './components/DateLabels';
+import DateLabels from './components/UI_buttons/DateLabels';
 
 function App() {
   const mouseFollowerRef = useRef(null);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../App.css';
-import Button from './Button';
-import SwitchButton from './SwitchButton';
+import Button from './UI_buttons/Button';
+import SwitchButton from './UI_buttons/SwitchButton';
 import { Home, Star, Favorite, Lock, LockOpen } from '@mui/icons-material';
 
 
