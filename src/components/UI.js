@@ -4,11 +4,14 @@ import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
 import BigTextEditor from './UI_buttons/BigTextEditor';
-import { Home, Star, Favorite, Lock, LockOpen, Delete } from '@mui/icons-material';
+import DateRangePicker from './UI_buttons/DateRangePicker';
+import { Home, Star, Favorite, Lock, LockOpen, Delete, Visibility, VisibilityOff } from '@mui/icons-material';
 
+const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deactivateRectangle, activeRectangle,
+    startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen }) => {
 
-const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deactivateRectangle, activeRectangle }) => {
     const [activeGroup, setActiveGroup] = useState(1);
+    const [visible, setVisible] = useState(true); // State for visibility
 
     const buttonGroups = {
         1: [
@@ -32,57 +35,64 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
 
     return (
         <div>
-            <BigTextEditor className="UI" />
+            <div style={{ display: visible ? 'flex' : 'none' }}>
+                <BigTextEditor className="UI" />
+                <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
 
-            <div className="ui-container">
-                {buttonGroups[activeGroup].map(button => (
-                    <Button
-                        key={button.id}
-                        id={button.id}
-                        text={button.text}
-                        color={button.color}
-                        size={button.size}
-                        createRectangle={createRectangle}
-                        zoom={zoom}
-                        mouseFollowerRef={mouseFollowerRef}
-                        icon={button.icon}
-                        group={button.group}
-                    />
-                ))}
+                <div className="ui-container">
+                    {buttonGroups[activeGroup].map(button => (
+                        <Button
+                            key={button.id}
+                            id={button.id}
+                            text={button.text}
+                            color={button.color}
+                            size={button.size}
+                            createRectangle={createRectangle}
+                            zoom={zoom}
+                            mouseFollowerRef={mouseFollowerRef}
+                            icon={button.icon}
+                            group={button.group}
+                        />
+                    ))}
 
-                <div className="note-button">
-                    <Button
-                        key={0}
-                        id={0}
-                        text={'Note'}
-                        color={'#DAA520'}
-                        size={1}
-                        createRectangle={createRectangle}
-                        zoom={zoom}
-                        mouseFollowerRef={mouseFollowerRef}
-                        icon={<Home />}
-                        group={0}
-                    />
-                </div>
-
-                <div className='UI switch-buttons-container'>
-                    <div className="switch-buttons">
-                        {[1, 2, 3].map(group => (
-                            <SwitchButton
-                                key={group}
-                                group={group}
-                                setActiveGroup={setActiveGroup}
-                            />
-                        ))}
+                    <div className="note-button">
+                        <Button
+                            key={0}
+                            id={0}
+                            text={'Note'}
+                            color={'#DAA520'}
+                            size={1}
+                            createRectangle={createRectangle}
+                            zoom={zoom}
+                            mouseFollowerRef={mouseFollowerRef}
+                            icon={<Home />}
+                            group={0}
+                        />
                     </div>
+
+                    <div className='UI switch-buttons-container'>
+                        <div className="switch-buttons">
+                            {[1, 2, 3].map(group => (
+                                <SwitchButton
+                                    key={group}
+                                    group={group}
+                                    setActiveGroup={setActiveGroup}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    <Trashcan className="UI trashcan" icon={<Delete />} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
                 </div>
-
-                <button className="UI lock-button" onClick={() => setLocked(!locked)}>
-                    {locked ? <Lock /> : <LockOpen />}
-                </button>
-
-                <Trashcan className="UI trashcan" icon={<Delete />} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
             </div>
+
+            <button className="UI lock-button" onClick={() => setLocked(!locked)}>
+                {locked ? <Lock /> : <LockOpen />}
+            </button>
+
+            <button className="UI view-button" onClick={() => setVisible(!visible)}>
+                {visible ? <Visibility /> : <VisibilityOff />}
+            </button>
         </div>
     );
 };

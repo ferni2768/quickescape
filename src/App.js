@@ -5,9 +5,8 @@ import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
 import UI from './components/UI';
-import DateRangePicker from './components/UI_buttons/DateRangePicker';
 import dayjs from 'dayjs';
-import DateLabels from './components/UI_buttons/DateLabels';
+import DateLabels from './components/DateLabels';
 
 function App() {
   const mouseFollowerRef = useRef(null);
@@ -162,8 +161,9 @@ function App() {
 
   return (
     <div className="App">
-      <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
-      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle}
+        startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
+
       <animated.div
         className="room"
         style={{
