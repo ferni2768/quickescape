@@ -3,35 +3,37 @@ import '../App.css';
 import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
+import BigTextEditor from './UI_buttons/BigTextEditor';
 import { Home, Star, Favorite, Lock, LockOpen, Delete } from '@mui/icons-material';
 
 
 const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deactivateRectangle, activeRectangle }) => {
     const [activeGroup, setActiveGroup] = useState(1);
-    const startID = 1;
 
     const buttonGroups = {
         1: [
-            { id: startID, text: '1', color: '#4CAF50', size: 1, icon: <Home />, group: 1 },
-            { id: startID + 1, text: '2', color: '#2196F3', size: 2, icon: <Star />, group: 1 },
-            { id: startID + 2, text: '3', color: '#f44336', size: 1, icon: <Favorite />, group: 1 },
-            { id: startID + 3, text: '4', color: '#FF5722', size: 2, icon: <Favorite />, group: 1 },
+            { id: 1, text: '1', color: '#4CAF50', size: 1, icon: <Home />, group: 1 },
+            { id: 2, text: '2', color: '#2196F3', size: 2, icon: <Star />, group: 1 },
+            { id: 3, text: '3', color: '#f44336', size: 1, icon: <Favorite />, group: 1 },
+            { id: 4, text: '4', color: '#FF5722', size: 2, icon: <Favorite />, group: 1 },
         ],
         2: [
-            { id: startID + 4, text: '5', color: '#9C27B0', size: 1, icon: <Home />, group: 2 },
-            { id: startID + 5, text: '6', color: '#3F51B5', size: 2, icon: <Star />, group: 2 },
-            { id: startID + 6, text: '7', color: '#00BCD4', size: 1, icon: <Favorite />, group: 2 },
-            { id: startID + 7, text: '8', color: '#8BC34A', size: 2, icon: <Favorite />, group: 2 },
+            { id: 5, text: '5', color: '#9C27B0', size: 1, icon: <Home />, group: 2 },
+            { id: 6, text: '6', color: '#3F51B5', size: 2, icon: <Star />, group: 2 },
+            { id: 7, text: '7', color: '#00BCD4', size: 1, icon: <Favorite />, group: 2 },
+            { id: 8, text: '8', color: '#8BC34A', size: 2, icon: <Favorite />, group: 2 },
         ],
         3: [
-            { id: startID + 8, text: '9', color: '#FFC107', size: 1, icon: <Home />, group: 3 },
-            { id: startID + 9, text: '10', color: '#FFEB3B', size: 2, icon: <Star />, group: 3 },
-            { id: startID + 10, text: '11', color: '#FF9800', size: 1, icon: <Favorite />, group: 3 },
+            { id: 9, text: '9', color: '#FFC107', size: 1, icon: <Home />, group: 3 },
+            { id: 10, text: '10', color: '#FFEB3B', size: 2, icon: <Star />, group: 3 },
+            { id: 11, text: '11', color: '#FF9800', size: 1, icon: <Favorite />, group: 3 },
         ],
     };
 
     return (
         <div>
+            <BigTextEditor className="UI" />
+
             <div className="ui-container">
                 {buttonGroups[activeGroup].map(button => (
                     <Button
