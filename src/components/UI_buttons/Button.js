@@ -1,5 +1,4 @@
 import React from 'react';
-import '../../App.css';
 
 const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef, icon, group }) => {
     const handleButtonClick = () => {

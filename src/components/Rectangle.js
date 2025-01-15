@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { RECTANGLE_SIZES } from '../Controller';
+import './styles/Rectangle.css';
 
 const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize,
     rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote }) => {

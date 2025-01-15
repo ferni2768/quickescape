@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { animated } from '@react-spring/web';
-import './App.css';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
 import UI from './components/UI';
 import dayjs from 'dayjs';
 import DateLabels from './components/DateLabels';
+import './components/styles/Room.css';
 
 function App() {
   const mouseFollowerRef = useRef(null);

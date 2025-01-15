@@ -1,0 +1,92 @@
+.rectangle {
+    width: 150px;
+    height: auto;
+    background-color: blue;
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform;
+    cursor: grab;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.rectangle.size-1,
+.ghost.size-1 {
+    width: 150px;
+}
+
+.rectangle.size-2,
+.ghost.size-2 {
+    width: 300px;
+}
+
+.rectangle.dragging {
+    cursor: grabbing;
+}
+
+.rectangle.resizing {
+    cursor: ns-resize;
+}
+
+.ghost {
+    width: 150px;
+    height: 50px;
+    background-color: rgba(0, 0, 255, 0.3);
+    position: absolute;
+    pointer-events: none;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.rectangle-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    font-size: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.rectangle-text {
+    width: 100%;
+    height: calc(100% - 30px);
+    pointer-events: none;
+    color: white;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+    padding: 2px;
+    line-height: 1.5;
+    position: relative;
+    overflow: hidden;
+}
+
+.rectangle-text-area {
+    width: 100%;
+    height: calc(100% - 30px);
+    background-color: transparent;
+    border: none;
+    color: white;
+    resize: none;
+    outline: none;
+    font: inherit;
+    padding: 2px;
+    margin: 0;
+    text-align: left;
+    vertical-align: top;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+
+    position: relative;
+    overflow: hidden;
+}

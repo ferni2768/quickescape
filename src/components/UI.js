@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import '../App.css';
 import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
 import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
 import { Home, Star, Favorite, Lock, LockOpen, Delete, Visibility, VisibilityOff } from '@mui/icons-material';
+import './styles/Buttons.css';
 
 const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deactivateRectangle, activeRectangle,
     startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen }) => {

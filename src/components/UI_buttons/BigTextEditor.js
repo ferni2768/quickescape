@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import '../styles/TripName.css';
 
 const BigTextEditor = () => {
     const [isEditing, setIsEditing] = useState(false);
