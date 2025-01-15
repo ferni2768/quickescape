@@ -1,12 +1,17 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { animated } from '@react-spring/web';
 import './App.css';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
 import UI from './components/UI';
+import DateRangePicker from './components/DateRangePicker';
+import dayjs from 'dayjs';
+import DateLabels from './components/DateLabels';
 
 function App() {
+  const mouseFollowerRef = useRef(null);
+  const [locked, setLocked] = useState(true);
 
   const {
     rectangles,
@@ -32,9 +37,12 @@ function App() {
     isCameraDragging,
     positionState,
     setPositionState
-  } = Camera(getClientXY);
+  } = Camera(getClientXY, locked);
 
-  const mouseFollowerRef = useRef(null);
+  // Control the date range picker
+  const [isOpen, setIsOpen] = useState(false);
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(dayjs().add(2, 'day').toDate());
 
   // Update position on touch/mouse move
   useEffect(() => {
@@ -138,10 +146,23 @@ function App() {
     };
   }, [activeRectangle, rectangles, isCameraDragging, handleMouseUpCamera, positionState, setPositionState, setActiveRectangle, setRectangles]);
 
+  // Calculate the height of the center section based on the date range
+  useEffect(() => {
+    const daysDifference = dayjs(endDate).diff(dayjs(startDate), 'day') + 1;
+    const heightPerDay = gridSize * 4 * 24;
+    const centerSectionHeight = daysDifference * heightPerDay;
+
+    if (centerSectionRef.current) {
+      centerSectionRef.current.style.setProperty('--center-section-height', `${centerSectionHeight}px`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerSectionRef, isOpen]);
+
 
   return (
     <div className="App">
-      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} />
+      <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} />
       <animated.div
         className="room"
         style={{
@@ -156,6 +177,9 @@ function App() {
             position: 'relative',
           }}
         >
+
+          <DateLabels startDate={startDate} endDate={endDate} gridSize={gridSize} />
+
           <div
             className="center-section"
             ref={centerSectionRef}

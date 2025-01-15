@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring } from '@react-spring/web';
 
-export function Camera(getClientXY) {
+export function Camera(getClientXY, locked) {
     const [zoom, setZoom] = useState(1);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
     const centerSectionRef = useRef(null);
@@ -30,6 +30,7 @@ export function Camera(getClientXY) {
 
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
+        if (!locked) return;
         setViewportState((prev) => {
             const centerSectionTop = centerSectionRef.current?.offsetTop - prev.windowSize.height / 5 || 0;
             const centerSectionBottom = centerSectionTop + (centerSectionRef.current?.offsetHeight || 0) + prev.windowSize.height / 5;
@@ -50,7 +51,12 @@ export function Camera(getClientXY) {
                 },
             };
         });
-    }, [centerSectionRef]);
+    }, [centerSectionRef, locked]);
+
+    // Center the camera when locked is toggled
+    useEffect(() => {
+        if (locked) centerCamera();
+    }, [locked, centerCamera]);
 
     // Update window size on resize
     useEffect(() => {

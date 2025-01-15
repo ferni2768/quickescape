@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import '../App.css';
 import Button from './Button';
 import SwitchButton from './SwitchButton';
-import { Home, Star, Favorite } from '@mui/icons-material';
+import { Home, Star, Favorite, Lock, LockOpen } from '@mui/icons-material';
 
 
-const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
+const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked }) => {
     const [activeGroup, setActiveGroup] = useState(1);
     const startID = 1;
 
@@ -71,6 +71,10 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef }) => {
                         />
                     ))}
                 </div>
+
+                <button className="UI lock-button" onClick={() => setLocked(!locked)}>
+                    {locked ? <Lock /> : <LockOpen />}
+                </button>
             </div>
         </div>
     );
