@@ -7,6 +7,7 @@ import { useController } from '../src/Controller';
 import UI from './components/UI';
 import DateRangePicker from './components/DateRangePicker';
 import dayjs from 'dayjs';
+import DateLabels from './components/DateLabels';
 
 function App() {
 
@@ -176,6 +177,9 @@ function App() {
             position: 'relative',
           }}
         >
+
+          <DateLabels startDate={startDate} endDate={endDate} gridSize={gridSize} />
+
           <div
             className="center-section"
             ref={centerSectionRef}

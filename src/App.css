@@ -228,3 +228,18 @@
 .react-datepicker__day:hover {
     background-color: #f0f0f0;
 }
+
+.date-labels {
+    position: absolute;
+    left: -300px;
+    top: 0;
+    width: 200px;
+    text-align: right;
+    z-index: 10;
+}
+
+.date-label {
+    position: absolute;
+    font-size: 40px;
+    color: black;
+}
