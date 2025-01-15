@@ -10,6 +10,8 @@ import dayjs from 'dayjs';
 import DateLabels from './components/DateLabels';
 
 function App() {
+  const mouseFollowerRef = useRef(null);
+  const [locked, setLocked] = useState(true);
 
   const {
     rectangles,
@@ -35,9 +37,7 @@ function App() {
     isCameraDragging,
     positionState,
     setPositionState
-  } = Camera(getClientXY);
-
-  const mouseFollowerRef = useRef(null);
+  } = Camera(getClientXY, locked);
 
   // Control the date range picker
   const [isOpen, setIsOpen] = useState(false);
@@ -162,7 +162,7 @@ function App() {
   return (
     <div className="App">
       <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
-      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} />
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} />
       <animated.div
         className="room"
         style={{

@@ -17,7 +17,6 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
     const [isResizing, setIsResizing] = useState(false);
     const [showGhost, setShowGhost] = useState(false);
     const rectangleWidth = RECTANGLE_SIZES[size];
-    const startX = -(rectangleWidth / 2);
 
     // State variables for rectangle text editing
     const [startTime, setStartTime] = useState(null);
@@ -42,7 +41,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
 
     // Utility to check if two rectangles overlap
     const doesOverlap = useCallback((id, customPos1, customHeight) => {
-        if (rectangles[id - 1].x !== -RECTANGLE_SIZES[rectangles[id - 1].size] / 2) return false;
+        if (rectangles[id - 1].x !== centerSectionRef.current.style.x - (RECTANGLE_SIZES[rectangles[id - 1].size] / 2)) return false;
 
         const thereshold = 5;
         const pos1 = customPos1 !== undefined ? customPos1 : rectangleState.absolutePosition.y;
@@ -56,7 +55,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
         const bot2 = top2 + otherRect.height - thereshold;
 
         return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
-    }, [rectangleState.absolutePosition, rectangleState.height, rectangles]);
+    }, [rectangleState.absolutePosition, rectangleState.height, rectangles, centerSectionRef]);
 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
@@ -73,8 +72,8 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
             const centerX = centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) : viewportState.windowSize.width / 2;
             const centerY = centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) : viewportState.windowSize.height / 2;
             return {
-                x: viewportState.cameraPosition.x + absolutePos.x + centerX - viewportState.cameraPosition.x,
-                y: viewportState.cameraPosition.y + absolutePos.y + centerY - viewportState.cameraPosition.y,
+                x: absolutePos.x + centerX,
+                y: absolutePos.y + centerY,
             };
         },
         [viewportState, centerSectionRef]
@@ -141,7 +140,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 const newHeight = Math.max(20, Math.min(300, Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize));
                 var canResize = true;
 
-                if (rectangleState.absolutePosition.x === startX && !isNote) {
+                if (rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 && !isNote) {
                     for (let i = 1; i < rectangles.length + 1; i++) {
                         if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
                             canResize = false;
@@ -152,7 +151,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, startX, rect.id]);
+    }, [centerSectionRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id]);
 
     // Handle mouse/touch down/up for the rectangle
     useEffect(() => {
@@ -175,7 +174,7 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
                 if (showGhost && !overlapping) {
                     const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
                         Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
-                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - rectangleWidth / 2, y: snappedY } }));
+                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
                 } else if (showGhost && overlapping) {
                     setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
                 }
@@ -197,8 +196,8 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
-        const centerSectionStart = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 - (rectangleWidth + 100);
-        const centerSectionEnd = viewportState.cameraPosition.x + viewportState.windowSize.width / 2 + 100;
+        const centerSectionStart = centerSectionRef.current.style.x - (rectangleWidth + 100);
+        const centerSectionEnd = centerSectionRef.current.style.x + 100;
         if (!isResizing && rectangleState.absolutePosition.x > centerSectionStart && rectangleState.absolutePosition.x < centerSectionEnd
             && rectangleState.absolutePosition.y >= -gridSize * 7 && rectangleState.absolutePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - rectangleState.height + 7 * gridSize : 0)) {
             setShowGhost(true);
@@ -298,11 +297,11 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
             >
                 <div className='rectangle-header'>
                     {icon}
-                    {showGhost ?
+                    {!isNote ? showGhost ?
                         `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}-${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize + rectangleState.height))}` :
-                        (rectangleState.absolutePosition.x === startX ?
+                        (rectangleState.absolutePosition.x === centerSectionRef.current.style.x ?
                             `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
-                            `${calculateDuration(rectangleState.height)}h`)}
+                            `${calculateDuration(rectangleState.height)}h`) : null}
                 </div>
                 {isEditing ? (
                     <textarea
