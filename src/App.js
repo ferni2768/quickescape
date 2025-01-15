@@ -22,7 +22,8 @@ function App() {
     setAdjustedMousePosition,
     gridSize,
     getClientXY,
-    createRectangle
+    createRectangle,
+    deactivateRectangle
   } = useController();
 
   const {
@@ -162,7 +163,7 @@ function App() {
   return (
     <div className="App">
       <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
-      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} />
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
       <animated.div
         className="room"
         style={{
@@ -191,7 +192,7 @@ function App() {
             }}
           />
 
-          {rectangles.map((rect) => (
+          {rectangles.filter(rect => !rect.deactivated).map((rect) => (
             <React.Fragment key={rect.id}>
               <Rectangle
                 key={rect.id}
@@ -209,6 +210,7 @@ function App() {
                 size={rect.size}
                 icon={rect.icon}
                 isNote={rect.isNote}
+                deactivated={rect.deactivated}
               />
             </React.Fragment>
           ))}

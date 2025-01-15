@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import '../App.css';
 import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
-import { Home, Star, Favorite, Lock, LockOpen } from '@mui/icons-material';
+import Trashcan from './UI_buttons/Trashcan';
+import { Home, Star, Favorite, Lock, LockOpen, Delete } from '@mui/icons-material';
 
 
-const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked }) => {
+const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deactivateRectangle, activeRectangle }) => {
     const [activeGroup, setActiveGroup] = useState(1);
     const startID = 1;
 
@@ -77,6 +78,8 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked }) => {
                 <button className="UI lock-button" onClick={() => setLocked(!locked)}>
                     {locked ? <Lock /> : <LockOpen />}
                 </button>
+
+                <Trashcan className="UI trashcan" icon={<Delete />} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
             </div>
         </div>
     );

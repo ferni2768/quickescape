@@ -184,6 +184,20 @@
     z-index: 1000;
 }
 
+.trashcan {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 75px;
+    height: 75px;
+    background-color: red;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+}
+
 .UI {
     pointer-events: all;
 }
