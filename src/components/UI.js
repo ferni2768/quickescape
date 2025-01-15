@@ -62,14 +62,16 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked }) => {
                     />
                 </div>
 
-                <div className="switch-buttons">
-                    {[1, 2, 3].map(group => (
-                        <SwitchButton
-                            key={group}
-                            group={group}
-                            setActiveGroup={setActiveGroup}
-                        />
-                    ))}
+                <div className='UI switch-buttons-container'>
+                    <div className="switch-buttons">
+                        {[1, 2, 3].map(group => (
+                            <SwitchButton
+                                key={group}
+                                group={group}
+                                setActiveGroup={setActiveGroup}
+                            />
+                        ))}
+                    </div>
                 </div>
 
                 <button className="UI lock-button" onClick={() => setLocked(!locked)}>

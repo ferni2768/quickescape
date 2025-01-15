@@ -157,6 +157,16 @@
     border-radius: 10px;
 }
 
+.switch-buttons-container {
+    background-color: #e3e3e3;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding: 10px;
+    margin-top: 50px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
 .lock-button {
     position: fixed;
     bottom: 20px;
