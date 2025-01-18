@@ -35,6 +35,7 @@ function App() {
     cameraProps,
     zoomProps,
     zoom,
+    refresh,
     isCameraDragging,
     positionState,
     setPositionState
@@ -231,6 +232,7 @@ function App() {
                 icon={rect.icon}
                 isNote={rect.isNote}
                 deactivated={rect.deactivated}
+                refresh={refresh}
               />
             </React.Fragment>
           ))}

@@ -3,7 +3,7 @@ import { useSpring, animated } from '@react-spring/web';
 import { RECTANGLE_SIZES } from '../Controller';
 import './styles/Rectangle.css';
 
-const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adjustedMousePosition, gridSize,
+const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, rect, adjustedMousePosition, gridSize,
     rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote }) => {
 
     // State object with state variables
@@ -266,62 +266,68 @@ const Rectangle = React.memo(({ viewportState, zoom, centerSectionRef, rect, adj
     };
 
 
+    // Function to render the rectangle
+    const renderRectangle = (isVisible) => (
+        <animated.div
+            className={`rectangle rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isNote ? 'note' : ''}`}
+            style={{
+                transform: rectangleProps.x.to((x) => {
+                    const relativePos = getRelativePosition({
+                        x: rectangleProps.x.get(),
+                        y: rectangleProps.y.get(),
+                    });
+                    return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x) / 10}deg)`;
+                }),
+                height: rectangleProps.height,
+                position: 'absolute',
+                backgroundColor: color,
+                zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
+                visibility: isVisible ? 'visible' : 'hidden'
+            }}
+            onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
+            onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
+            onMouseUp={() => {
+                if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
+                setStartTime(null);
+                setEditDistance(0);
+            }}
+            onTouchEnd={() => {
+                if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
+                setStartTime(null);
+                setEditDistance(0);
+            }}
+        >
+            <div className='rectangle-header'>
+                {icon}
+                {!isNote ? showGhost ?
+                    `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}-${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize + rectangleState.height))}` :
+                    (rectangleState.absolutePosition.x === centerSectionRef.current.style.x ?
+                        `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
+                        `${calculateDuration(rectangleState.height)}h`) : null}
+            </div>
+            {isEditing ? (
+                <textarea
+                    className="UI rectangle-text-area"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    ref={textareaRef}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    spellCheck="false"
+                    autoFocus
+                />
+            ) : (
+                <div className="rectangle-text"> {text} </div>
+            )}
+        </animated.div>
+    );
+
     return (
         <div>
-            <animated.div
-                className={`rectangle rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
-                style={{
-                    transform: rectangleProps.x.to((x) => {
-                        const relativePos = getRelativePosition({
-                            x: rectangleProps.x.get(),
-                            y: rectangleProps.y.get(),
-                        });
-                        return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x) / 10}deg)`;
-                    }),
-                    height: rectangleProps.height,
-                    position: 'absolute',
-                    backgroundColor: color,
-                    zIndex: isNote ? '99' : (isDragging ? '100' : '10')
-                }}
-                onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
-                onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
-                onMouseUp={() => {
-                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
-                    setStartTime(null);
-                    setEditDistance(0);
-                }}
-                onTouchEnd={() => {
-                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
-                    setStartTime(null);
-                    setEditDistance(0);
-                }}
-            >
-                <div className='rectangle-header'>
-                    {icon}
-                    {!isNote ? showGhost ?
-                        `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}-${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize + rectangleState.height))}` :
-                        (rectangleState.absolutePosition.x === centerSectionRef.current.style.x ?
-                            `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
-                            `${calculateDuration(rectangleState.height)}h`) : null}
-                </div>
-                {isEditing ? (
-                    <textarea
-                        className="UI rectangle-text-area"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        ref={textareaRef}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
-                        spellCheck="false"
-                        autoFocus
-                    />
-                ) : (
-                    <div className="rectangle-text"> {text} </div>
-                )}
-            </animated.div>
-
+            {renderRectangle(!refresh)}
+            {renderRectangle(refresh)}
             {!isNote && isDragging && showGhost && (
                 <div className={`ghost size-${size}`}
                     style={{
