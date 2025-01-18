@@ -1,13 +1,13 @@
 .date-range {
-    position: absolute;
-    top: 150px;
-    left: 10px;
+    display: flex;
+    position: relative;
     color: black;
     cursor: pointer;
     z-index: 1000;
-    width: 100%;
-
-    font-size: xx-large;
+    font-size: calc(0.3vw + 0.75em);
+    width: 12ch;
+    height: calc(2*(7.5px + 0.75vw));
+    margin-top: 0.3rem;
 }
 
 .react-datepicker {

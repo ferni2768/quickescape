@@ -10,6 +10,7 @@ import './components/styles/Room.css';
 
 function App() {
   const mouseFollowerRef = useRef(null);
+  const appRef = useRef(null);
   const [locked, setLocked] = useState(true);
 
   const {
@@ -43,6 +44,25 @@ function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(dayjs().add(2, 'day').toDate());
+
+  // Set the dimensions of the app screen
+  useEffect(() => {
+    const setAppDimensions = () => {
+      if (appRef.current) {
+        appRef.current.style.height = `${window.innerHeight}px`;
+        appRef.current.style.width = `${window.innerWidth}px`;
+      }
+    };
+
+    setAppDimensions();
+    window.addEventListener('resize', setAppDimensions);
+    window.addEventListener('orientationchange', setAppDimensions);
+
+    return () => {
+      window.removeEventListener('resize', setAppDimensions);
+      window.removeEventListener('orientationchange', setAppDimensions);
+    };
+  }, []);
 
   // Update position on touch/mouse move
   useEffect(() => {
@@ -160,7 +180,7 @@ function App() {
 
 
   return (
-    <div className="App">
+    <div className="App" ref={appRef}>
       <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle}
         startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
 

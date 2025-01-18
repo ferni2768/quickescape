@@ -1,18 +1,26 @@
 .big-text-editor {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    min-width: 100px;
-    min-height: 100px;
-    max-width: 500px;
+    font-size: calc(2vw + 1em);
+    line-height: 1.2;
     cursor: pointer;
-    z-index: 1000;
+    z-index: 100;
+}
+
+.big-text-display {
+    min-width: calc(60px + 5vw);
+    max-width: 15ch;
+    min-height: calc(1*(25px + 2vw));
+    max-height: calc(2.4*(25px + 2vw));
+    font: inherit;
+    line-height: 1.2;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .big-text-area {
-    width: 100%;
+    width: 15ch;
     font: inherit;
-    font-size: 48px;
     line-height: 1.2;
     background-color: transparent;
     border: none;
@@ -23,12 +31,6 @@
     margin: 0;
     overflow: hidden;
     white-space: pre-wrap;
-}
-
-.big-text-display {
-    font-size: 48px;
-    line-height: 1.2;
-    white-space: pre-wrap;
-    overflow: hidden;
-    pointer-events: none;
+    overflow-wrap: break-word;
+    display: flex;
 }

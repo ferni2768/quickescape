@@ -36,7 +36,7 @@ const BigTextEditor = () => {
     const handleInputChange = (e) => {
         const textarea = textareaRef.current;
         const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
-        const maxHeight = lineHeight * 3;
+        const maxHeight = lineHeight * 2.1;
 
         if (textarea.scrollHeight <= maxHeight) {
             setText(e.target.value);
@@ -45,7 +45,7 @@ const BigTextEditor = () => {
 
 
     return (
-        <div className="UI big-text-editor" onClick={() => setIsEditing(true)}>
+        <div className="UI big-text-editor" onClick={() => setIsEditing(true)} onTouchStart={() => setIsEditing(true)}>
             {isEditing ? (
                 <textarea
                     className="UI big-text-area"

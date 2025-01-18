@@ -10,7 +10,7 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
     return (
         <button
             id={`button-${id}`}
-            className="UI ui-button"
+            className="UI rectangle-button"
             style={{ backgroundColor: color }}
             onMouseDown={handleButtonClick}
             onTouchStart={handleButtonClick}

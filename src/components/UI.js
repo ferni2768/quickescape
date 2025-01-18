@@ -36,26 +36,30 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
     return (
         <div>
             <div style={{ display: visible ? 'flex' : 'none' }}>
-                <BigTextEditor className="UI" />
-                <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
+                <div className="UI top-left-container">
+                    <BigTextEditor className="UI" />
+                    <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
+                </div>
 
-                <div className="ui-container">
-                    {buttonGroups[activeGroup].map(button => (
-                        <Button
-                            key={button.id}
-                            id={button.id}
-                            text={button.text}
-                            color={button.color}
-                            size={button.size}
-                            createRectangle={createRectangle}
-                            zoom={zoom}
-                            mouseFollowerRef={mouseFollowerRef}
-                            icon={button.icon}
-                            group={button.group}
-                        />
-                    ))}
+                <div className="middle-left-container">
+                    <div className="UI rectangle-button-container">
+                        {buttonGroups[activeGroup].map(button => (
+                            <Button
+                                key={button.id}
+                                id={button.id}
+                                text={button.text}
+                                color={button.color}
+                                size={button.size}
+                                createRectangle={createRectangle}
+                                zoom={zoom}
+                                mouseFollowerRef={mouseFollowerRef}
+                                icon={button.icon}
+                                group={button.group}
+                            />
+                        ))}
+                    </div>
 
-                    <div className="note-button">
+                    <div className="UI note-button">
                         <Button
                             key={0}
                             id={0}
@@ -70,29 +74,31 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
                         />
                     </div>
 
-                    <div className='UI switch-buttons-container'>
-                        <div className="switch-buttons">
-                            {[1, 2, 3].map(group => (
-                                <SwitchButton
-                                    key={group}
-                                    group={group}
-                                    setActiveGroup={setActiveGroup}
-                                />
-                            ))}
-                        </div>
+                    <div className="UI switch-buttons-container">
+                        {[1, 2, 3].map(group => (
+                            <SwitchButton
+                                key={group}
+                                group={group}
+                                setActiveGroup={setActiveGroup}
+                            />
+                        ))}
                     </div>
-
-                    <Trashcan className="UI trashcan" icon={<Delete />} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
                 </div>
             </div>
 
-            <button className="UI lock-button" onClick={() => setLocked(!locked)}>
-                {locked ? <Lock /> : <LockOpen />}
-            </button>
+            <div className="UI bottom-left-container">
+                <button className="UI lock-button" onClick={() => setLocked(!locked)} onTouchStart={() => setLocked(!locked)}>
+                    {locked ? <Lock /> : <LockOpen />}
+                </button>
 
-            <button className="UI view-button" onClick={() => setVisible(!visible)}>
-                {visible ? <Visibility /> : <VisibilityOff />}
-            </button>
+                <button className="UI view-button" onClick={() => setVisible(!visible)} onTouchStart={() => setVisible(!visible)}>
+                    {visible ? <Visibility /> : <VisibilityOff />}
+                </button>
+            </div>
+
+            <div className="UI bottom-right-container">
+                <Trashcan className="UI trashcan" icon={<Delete />} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
+            </div>
         </div>
     );
 };
