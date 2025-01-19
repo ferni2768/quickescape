@@ -17,26 +17,30 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
     const maxDate = startDate ? dayjs(startDate).add(1, 'month').toDate() : null;
 
     return (
-        <div className="date-range">
+        <div className="UI date-range">
             <div
-                style={{ position: 'absolute', top: 0, left: 0, color: 'black', cursor: 'pointer', width: '100%' }}
+                style={{ position: 'absolute', top: 0, left: 0, color: 'black', cursor: 'pointer', width: '100%', visibility: `${isOpen ? 'hidden' : 'visible'}` }}
                 onClick={() => setIsOpen(true)}
             >
                 {`${startDate ? dayjs(startDate).format('DD MMM') : ''} - ${endDate ? dayjs(endDate).format('DD MMM') : ''}`}
             </div>
-            {isOpen && (
-                <DatePicker
-                    selected={startDate}
-                    onChange={handleDateChange}
-                    startDate={startDate}
-                    endDate={endDate}
-                    selectsRange
-                    inline
-                    onClickOutside={() => setIsOpen(false)}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                />
-            )}
+
+            <div className="UI">
+                {isOpen && (
+                    <DatePicker
+                        selected={startDate}
+                        onChange={handleDateChange}
+                        startDate={startDate}
+                        endDate={endDate}
+                        selectsRange
+                        inline
+                        onClickOutside={() => setIsOpen(false)}
+                        minDate={minDate}
+                        maxDate={maxDate}
+                        calendarStartDay={1}
+                    />
+                )}
+            </div>
         </div>
     );
 };

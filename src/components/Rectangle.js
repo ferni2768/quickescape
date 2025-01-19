@@ -10,7 +10,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [rectangleState, setRectangleState] = useState({
         absolutePosition: { x: rect.x, y: rect.y },
         initialDragPosition: { x: rect.x, y: rect.y },
-        height: rect.height || 50
+        height: rect.height || gridSize * 4
     });
 
     // State variables for dragging and resizing
