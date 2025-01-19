@@ -80,8 +80,9 @@ function App() {
         mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
 
         // Calculate adjusted position
+        const adjustedX = (clientX - cameraRect.left) / zoom;
         const adjustedY = (clientY - cameraRect.top) / zoom;
-        setAdjustedMousePosition(adjustedY);
+        setAdjustedMousePosition({ x: adjustedX, y: adjustedY });
       }
 
       if (activeRectangle !== null) {
@@ -96,7 +97,6 @@ function App() {
       }
     };
 
-    // Attach both mousemove and touchmove events
     window.addEventListener('mousemove', handleMoveWrapper);
     window.addEventListener('touchmove', handleMoveWrapper, { passive: false });
 
@@ -104,7 +104,8 @@ function App() {
       window.removeEventListener('mousemove', handleMoveWrapper);
       window.removeEventListener('touchmove', handleMoveWrapper);
     };
-  }, [activeRectangle, rectangles, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef, getClientXY, setAdjustedMousePosition]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, activeRectangle, rectangles, positionState, setPositionState, getClientXY]);
 
   // Handle touch/mouse down to start dragging
   useEffect(() => {

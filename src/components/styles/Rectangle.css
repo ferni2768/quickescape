@@ -13,6 +13,40 @@
     overflow-wrap: anywhere;
 }
 
+.ghost {
+    width: 150px;
+    height: 50px;
+    border-radius: 1.5ch;
+    background-color: rgba(0, 0, 255, 0.3);
+    position: absolute;
+    pointer-events: none;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.resize-hint {
+    pointer-events: none;
+    position: absolute;
+    bottom: -6px;
+    right: 3px;
+    width: 30px;
+    height: 30px;
+    transition: opacity 0.2s;
+    mix-blend-mode: lighten;
+}
+
+.resize-hint.hidden {
+    opacity: 0;
+}
+
+.resize-hint.dragging {
+    opacity: 0.2;
+}
+
+.resize-hint.dragging.resizing {
+    opacity: 0.7;
+}
+
 .note {
     border-top-left-radius: 0;
 }
@@ -38,17 +72,6 @@
 
 .rectangle.resizing {
     cursor: ns-resize;
-}
-
-.ghost {
-    width: 150px;
-    height: 50px;
-    border-radius: 1.5ch;
-    background-color: rgba(0, 0, 255, 0.3);
-    position: absolute;
-    pointer-events: none;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 .rectangle-header {

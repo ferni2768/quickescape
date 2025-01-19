@@ -90,9 +90,11 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
             const { clientX, clientY } = getClientXY(event);
             const currentRectBottom = rectangleState.absolutePosition.y + rectangleState.height;
+            const currentRectRight = rectangleState.absolutePosition.x + rectangleWidth + 47.5;
+
             setRectangleState((prev) => ({ ...prev, initialDragPosition: { ...rectangleState.absolutePosition } }));
 
-            if (adjustedMousePosition >= currentRectBottom - 15 && adjustedMousePosition <= currentRectBottom) {
+            if (adjustedMousePosition.y >= currentRectBottom - 35 && adjustedMousePosition.x >= currentRectRight - 35) {
                 setIsResizing(true);
                 document.body.style.cursor = 'ns-resize';
                 setPositionState((prev) => ({
@@ -343,9 +345,22 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 ) : (
                     <div className={`${isSmallRectangle ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
                 )}
+                {/* Add the resize hint */}
+                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30">
+                    <path
+                        d="M 28 0 V 20 C 28 24 24 28 20 28 L 0 28"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                    />
+                </svg>
+
+
             </animated.div>
         );
     };
+
     return (
         <div>
             {renderRectangle(!refresh)}
