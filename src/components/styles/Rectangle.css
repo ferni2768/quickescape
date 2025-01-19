@@ -2,6 +2,8 @@
     width: 150px;
     height: auto;
     background-color: blue;
+    border-radius: 1.5ch;
+    padding: 1ch;
     position: absolute;
     top: 0;
     left: 0;
@@ -9,6 +11,15 @@
     cursor: grab;
     overflow: hidden;
     overflow-wrap: anywhere;
+}
+
+.note {
+    border-top-left-radius: 0;
+}
+
+.rectangle-text.note,
+.rectangle-text-area.note {
+    height: 100%;
 }
 
 .rectangle.size-1,
@@ -32,6 +43,7 @@
 .ghost {
     width: 150px;
     height: 50px;
+    border-radius: 1.5ch;
     background-color: rgba(0, 0, 255, 0.3);
     position: absolute;
     pointer-events: none;
@@ -40,9 +52,6 @@
 }
 
 .rectangle-header {
-    position: sticky;
-    top: 0;
-    left: 0;
     pointer-events: none;
     font-size: 10px;
     color: white;
@@ -89,4 +98,90 @@
 
     position: relative;
     overflow: hidden;
+}
+
+.rectangle.small {
+    display: flex;
+    flex-direction: row;
+    padding: 0.5ch;
+}
+
+.rectangle-header-small {
+    pointer-events: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.rectangle-text-small {
+    width: calc(100% - 40px);
+    height: 100%;
+    pointer-events: none;
+    color: white;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+    padding: 2px;
+    line-height: 1.5;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+.rectangle-text-area-small {
+    width: calc(100% - 40px);
+    height: 100%;
+    background-color: transparent;
+    border: none;
+    color: white;
+    resize: none;
+    outline: none;
+    font: inherit;
+    padding: 2px;
+    margin: 0;
+    text-align: left;
+    vertical-align: top;
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+
+    position: relative;
+    overflow: hidden;
+}
+
+.rectangle-header-text {
+    color: white;
+    text-align: left;
+    white-space: nowrap;
+    padding-left: 0.5ch;
+    padding-top: 0.1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.rectangle-icon-small {
+    width: 40px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.2rem;
+    margin-top: 0.3ch;
+    margin-right: 0.1rem;
+}
+
+.rectangle-time {
+    font-size: 0.75rem;
+    color: white;
+    text-align: left;
+    white-space: nowrap;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
