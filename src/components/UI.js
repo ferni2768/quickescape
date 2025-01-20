@@ -84,6 +84,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
                             <SwitchButton
                                 key={group}
                                 group={group}
+                                activeGroup={activeGroup}
                                 setActiveGroup={setActiveGroup}
                             />
                         ))}
@@ -92,11 +93,11 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
             </div>
 
             <div className="UI bottom-left-container">
-                <button className="UI lock-button" onClick={() => setLocked(!locked)} onTouchStart={() => setLocked(!locked)}>
+                <button className={`UI lock-button ${locked ? '' : 'unlocked'}`} onClick={() => setLocked(!locked)} onTouchStart={() => setLocked(!locked)}>
                     {locked ? <Lock /> : <LockOpen />}
                 </button>
 
-                <button className="UI view-button" onClick={() => setVisible(!visible)} onTouchStart={() => setVisible(!visible)}>
+                <button className={`UI view-button ${visible ? '' : 'hidden'}`} onClick={() => setVisible(!visible)} onTouchStart={() => setVisible(!visible)}>
                     {visible ? <Visibility /> : <VisibilityOff />}
                 </button>
             </div>
