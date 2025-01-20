@@ -43,19 +43,24 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
 
                 <div className="middle-left-container">
                     <div className="UI rectangle-button-container">
-                        {buttonGroups[activeGroup].map(button => (
-                            <Button
-                                key={button.id}
-                                id={button.id}
-                                text={button.text}
-                                color={button.color}
-                                size={button.size}
-                                createRectangle={createRectangle}
-                                zoom={zoom}
-                                mouseFollowerRef={mouseFollowerRef}
-                                icon={button.icon}
-                                group={button.group}
-                            />
+                        {Object.entries(buttonGroups).map(([groupId, buttons]) => (
+                            <div key={groupId} className="rectangle-buttons-group">
+                                {buttons.map(button => (
+                                    <Button
+                                        key={button.id}
+                                        id={button.id}
+                                        text={button.text}
+                                        color={button.color}
+                                        size={button.size}
+                                        createRectangle={createRectangle}
+                                        zoom={zoom}
+                                        mouseFollowerRef={mouseFollowerRef}
+                                        icon={button.icon}
+                                        group={button.group}
+                                        activeGroup={activeGroup}
+                                    />
+                                ))}
+                            </div>
                         ))}
                     </div>
 

@@ -19,8 +19,15 @@
 }
 
 .rectangle-button-container {
-    display: flex;
-    flex-direction: column;
+    position: relative;
+    height: auto;
+    width: auto;
+}
+
+.rectangle-buttons-group {
+    position: absolute;
+    pointer-events: none;
+    bottom: 0;
 }
 
 .switch-buttons-container {
@@ -28,13 +35,14 @@
     border-top-right-radius: 10ch;
     border-bottom-right-radius: 10ch;
     padding: 0.1ch;
-    padding-left: 0.4ch;
+    padding-left: 3.4ch;
     padding-right: 0.1ch;
     margin-top: 1.5ch;
     pointer-events: none;
     font-size: calc(0.75vh + 1em);
     display: flex;
     flex-direction: row;
+    transform: translateX(-3ch);
 }
 
 .bottom-left-container {
@@ -53,12 +61,12 @@
 
 .rectangle-button {
     font-size: calc(0.75vh + 1em);
-    width: 9ch;
+    width: 12ch;
     background-color: #4CAF50;
     border: none;
     color: white;
     padding: calc(0.2em);
-    padding-left: 1ch;
+    padding-left: 4ch;
     text-align: center;
     text-decoration: none;
     display: flex;
@@ -67,7 +75,50 @@
     cursor: pointer;
     border-top-right-radius: 1ch;
     border-bottom-right-radius: 1ch;
-    transition: transform 0.3s ease-out;
+    transition: transform 0.2s ease-out;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+    transform: translateX(-3ch);
+}
+
+.rectangle-button-out {
+    animation-name: buttonOut;
+}
+
+.rectangle-button-in {
+    animation-name: buttonIn;
+}
+
+.no-animation {
+    animation: none !important;
+}
+
+@keyframes buttonOut {
+    0% {
+        transform: translateX(-3ch);
+    }
+
+    50% {
+        transform: translateX(-1ch);
+    }
+
+    100% {
+        transform: translateX(-150%);
+    }
+}
+
+@keyframes buttonIn {
+    0% {
+        transform: translateX(-150%);
+    }
+
+    50% {
+        transform: translateX(-1ch);
+    }
+
+    100% {
+        transform: translateX(-3ch);
+    }
 }
 
 .switch-button {
