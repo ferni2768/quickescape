@@ -67,6 +67,7 @@
     cursor: pointer;
     border-top-right-radius: 1ch;
     border-bottom-right-radius: 1ch;
+    transition: transform 0.3s ease-out;
 }
 
 .switch-button {

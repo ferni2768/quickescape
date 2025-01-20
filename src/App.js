@@ -221,6 +221,7 @@ function App() {
                 viewportState={viewportState}
                 zoom={zoom}
                 centerSectionRef={centerSectionRef}
+                mouseFollowerRef={mouseFollowerRef}
                 rect={rect}
                 adjustedMousePosition={adjustedMousePosition}
                 gridSize={gridSize}

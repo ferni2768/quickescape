@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useSpring, animated } from '@react-spring/web';
+import { useSpring, animated, easings } from '@react-spring/web';
 import { RECTANGLE_SIZES } from '../Controller';
 import './styles/Rectangle.css';
 
-const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, rect, adjustedMousePosition, gridSize,
+const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
     rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote }) => {
 
     // State object with state variables
@@ -18,6 +18,16 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [isResizing, setIsResizing] = useState(false);
     const [showGhost, setShowGhost] = useState(false);
     const rectangleWidth = RECTANGLE_SIZES[size];
+    const justCreated = useRef(true);
+    const xOffsetSpring = useSpring({
+        from: { xOffset: (viewportState.windowSize.width) / zoom },
+        to: { xOffset: 0 },
+        config: {
+            duration: 400,
+            easing: easings.easeOutQuad
+        },
+    })
+    const xOffset = xOffsetSpring.xOffset;
 
     // State variables for rectangle text editing
     const [startTime, setStartTime] = useState(null);
@@ -94,7 +104,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
             setRectangleState((prev) => ({ ...prev, initialDragPosition: { ...rectangleState.absolutePosition } }));
 
-            if (adjustedMousePosition.y >= currentRectBottom - 35 && adjustedMousePosition.x >= currentRectRight - 35) {
+            if (!justCreated.current && adjustedMousePosition.y >= currentRectBottom - 35 && adjustedMousePosition.x >= currentRectRight - 35) {
                 setIsResizing(true);
                 document.body.style.cursor = 'ns-resize';
                 setPositionState((prev) => ({
@@ -133,10 +143,22 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     ...prev,
                     mousePosition: newMousePosition,
                 }));
-                const newAbsolutePosition = {
-                    x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
-                    y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
-                };
+
+                let newAbsolutePosition;
+
+                if (!justCreated.current) {
+                    newAbsolutePosition = {
+                        x: (newMousePosition.x - positionState.offset.x) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.left) - viewportState.cameraPosition.x : viewportState.windowSize.width / 2),
+                        y: (newMousePosition.y - positionState.offset.y) / zoom - (centerSectionRef.current ? parseFloat(centerSectionRef.current.style.top) - viewportState.cameraPosition.y : viewportState.windowSize.height / 2)
+                    };
+                } else {
+                    const { offsetLeft, offsetTop } = mouseFollowerRef.current;
+
+                    newAbsolutePosition = {
+                        x: (offsetLeft - (rectangleWidth / 2) * zoom) / zoom,
+                        y: (offsetTop - (rectangleState.height / 2) * zoom) / zoom,
+                    };
+                }
                 setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
             } else {
                 const newY = clientY - positionState.offset.y;
@@ -154,7 +176,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id]);
+    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id]);
 
     // Handle mouse/touch down/up for the rectangle
     useEffect(() => {
@@ -179,11 +201,16 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                         Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
                     setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
                 } else if (showGhost && overlapping) {
-                    setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
+                    if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
+                    else {
+                        const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
+                        setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                    }
                 }
             }
 
             setIsResizing(false);
+            justCreated.current = false;
             document.body.style.cursor = 'default';
             window.removeEventListener('mousemove', handleMouseRectangle);
             window.removeEventListener('touchmove', handleMouseRectangle);
@@ -281,7 +308,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                             x: rectangleProps.x.get(),
                             y: rectangleProps.y.get(),
                         });
-                        return `translate3d(${relativePos.x}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x) / 10}deg)`;
+                        return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg)`;
                     }),
                     height: rectangleProps.height,
                     position: 'absolute',
@@ -331,7 +358,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 </div>
                 {isEditing ? (
                     <textarea
-                        className={`UI ${isSmallRectangle ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
+                        className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         ref={textareaRef}
@@ -343,7 +370,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                         autoFocus
                     />
                 ) : (
-                    <div className={`${isSmallRectangle ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
+                    <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
                 )}
                 {/* Add the resize hint */}
                 <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30">
