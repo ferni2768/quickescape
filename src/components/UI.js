@@ -12,6 +12,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
 
     const [activeGroup, setActiveGroup] = useState(1);
     const [visible, setVisible] = useState(true); // State for visibility
+    const [twoLines, setTwoLines] = useState(false);
 
     const buttonGroups = {
         1: [
@@ -37,8 +38,8 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
         <div>
             <div style={{ display: visible ? 'flex' : 'none' }}>
                 <div className="UI top-left-container">
-                    <BigTextEditor className="UI" />
-                    <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
+                    <BigTextEditor className="UI" setTwoLines={setTwoLines} />
+                    <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} twoLines={twoLines} />
                 </div>
 
                 <div className="middle-left-container">

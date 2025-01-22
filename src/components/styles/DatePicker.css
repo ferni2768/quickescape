@@ -1,6 +1,7 @@
 .date-range {
     display: flex;
-    position: relative;
+    position: absolute;
+    top: calc(2vw + 1em + 1ch);
     color: black;
     cursor: pointer;
     z-index: 1000;
@@ -8,6 +9,24 @@
     width: 12ch;
     height: calc(2*(7.5px + 0.75vw));
     margin-top: 0.3rem;
+    transition: transform ease-out 0.2s;
+    pointer-events: all;
+}
+
+.date-range.two-lines {
+    transform: translateY(calc(1*(25px + 2vw)));
+}
+
+.date-range-label {
+    transition: opacity ease-out 0.2s;
+}
+
+.date-range-label.closed {
+    opacity: 1;
+}
+
+.date-range-label.opened {
+    opacity: 0;
 }
 
 .react-datepicker {
@@ -22,6 +41,17 @@
     max-height: 90vh;
     overflow: hidden;
     z-index: 9999;
+    transform-origin: top left;
+    pointer-events: all;
+    z-index: 10000;
+}
+
+.fadeIn {
+    animation: fadeIn 0.2s ease-in-out forwards;
+}
+
+.fadeOut {
+    animation: fadeOut 0.2s ease-in-out forwards;
 }
 
 .react-datepicker__header {
@@ -97,5 +127,17 @@
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9);
     }
 }

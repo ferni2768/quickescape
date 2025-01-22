@@ -111,7 +111,9 @@ function App() {
   useEffect(() => {
     const handleDown = (event) => {
       event.preventDefault();
-      // Find the rectangle that matches the event target's class
+
+      // Check if the event target is part of the DatePicker or find a rectangle
+      if (event.target.closest('.react-datepicker')) return;
       const rect = rectangles.find(r => event.target.classList.contains(`rectangle-${r.id}`));
       const UI = event.target.classList.contains('UI') ? event.target : null;
 

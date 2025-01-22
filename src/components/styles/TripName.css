@@ -6,19 +6,27 @@
 }
 
 .big-text-display {
+    position: absolute;
+    top: 0;
+    left: 0;
     min-width: calc(60px + 5vw);
-    max-width: 15ch;
+    width: 15ch;
     min-height: calc(1*(25px + 2vw));
-    max-height: calc(2.4*(25px + 2vw));
+    max-height: calc(2*(25px + 2vw));
     font: inherit;
     line-height: 1.2;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     overflow: hidden;
-    pointer-events: none;
+    pointer-events: all;
 }
 
 .big-text-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: calc(1*(25px + 2vw));
+    height: calc(2*(25px + 2vw));
     width: 15ch;
     font: inherit;
     line-height: 1.2;
