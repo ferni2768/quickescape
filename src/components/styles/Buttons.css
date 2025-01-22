@@ -7,6 +7,44 @@
     position: absolute;
     top: calc(2.3vh + 0.5rem);
     left: calc(2.3vh + 0.5rem);
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+}
+
+.out.top-left-container {
+    animation-name: outTop;
+}
+
+.in.top-left-container {
+    animation-name: inTop;
+}
+
+@keyframes outTop {
+    0% {
+        transform: translateY(0ch);
+    }
+
+    50% {
+        transform: translateY(2ch);
+    }
+
+    100% {
+        transform: translateY(-20ch);
+    }
+}
+
+@keyframes inTop {
+    0% {
+        transform: translateY(-20ch);
+    }
+
+    50% {
+        transform: translateY(2ch);
+    }
+
+    100% {
+        transform: translateY(0ch);
+    }
 }
 
 .middle-left-container {
@@ -16,6 +54,44 @@
     flex-direction: column;
     left: 0px;
     z-index: 999;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+}
+
+.out.middle-left-container {
+    animation-name: outMiddle;
+}
+
+.in.middle-left-container {
+    animation-name: inMiddle;
+}
+
+@keyframes outMiddle {
+    0% {
+        transform: translateX(0ch);
+    }
+
+    50% {
+        transform: translateX(2ch);
+    }
+
+    100% {
+        transform: translateX(-150%);
+    }
+}
+
+@keyframes inMiddle {
+    0% {
+        transform: translateX(-150%);
+    }
+
+    50% {
+        transform: translateX(2ch);
+    }
+
+    100% {
+        transform: translateX(0ch);
+    }
 }
 
 .rectangle-button-container {

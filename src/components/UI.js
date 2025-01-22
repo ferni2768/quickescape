@@ -36,13 +36,13 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
 
     return (
         <div>
-            <div style={{ display: visible ? 'flex' : 'none' }}>
-                <div className="UI top-left-container">
+            <div>
+                <div className={`UI top-left-container ${visible ? 'in' : 'out'}`}>
                     <BigTextEditor className="UI" setTwoLines={setTwoLines} />
                     <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} twoLines={twoLines} />
                 </div>
 
-                <div className="middle-left-container">
+                <div className={`middle-left-container ${visible ? 'in' : 'out'}`}>
                     <div className="UI rectangle-button-container">
                         {Object.entries(buttonGroups).map(([groupId, buttons]) => (
                             <div key={groupId} className="rectangle-buttons-group">
