@@ -4,13 +4,14 @@ import { RECTANGLE_SIZES } from '../Controller';
 import './styles/Rectangle.css';
 
 const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
-    rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote }) => {
+    rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote, isOverTrashcan }) => {
 
     // State object with state variables
     const [rectangleState, setRectangleState] = useState({
         absolutePosition: { x: rect.x, y: rect.y },
         initialDragPosition: { x: rect.x, y: rect.y },
-        height: rect.height || gridSize * 4
+        height: rect.height || gridSize * 4,
+        deleting: false
     });
 
     // State variables for dragging and resizing
@@ -28,6 +29,12 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         },
     })
     const xOffset = xOffsetSpring.xOffset;
+    const [overTrashcanProps, setOverTrashcanProps] = useSpring(() => ({
+        scale: 1,
+        opacity: 1,
+        backgroundColor: color,
+        config: { tension: 2000, friction: 100 },
+    }));
 
     // State variables for rectangle text editing
     const [startTime, setStartTime] = useState(null);
@@ -178,12 +185,37 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         }
     }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id]);
 
+    // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
+    useEffect(() => {
+        if (isDragging && !isResizing && isOverTrashcan) {
+            setOverTrashcanProps({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
+        } else {
+            if (!rectangleState.deleting) {
+                setOverTrashcanProps({ scale: 1, opacity: 1, backgroundColor: color });
+            }
+        }
+    }, [isDragging, isResizing, isOverTrashcan, setOverTrashcanProps, rectangleState.deleting, color]);
+
     // Handle mouse/touch down/up for the rectangle
     useEffect(() => {
         if (isDragging) {
             window.addEventListener('mousemove', handleMouseRectangle);
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
         } else {
+
+            if (isOverTrashcan) {
+                const trashcan = document.querySelector('.trashcan');
+                trashcan.classList.remove('deleting');
+                setRectangleState((prev) => ({ ...prev, deleting: true }));
+                setOverTrashcanProps({ scale: 0.7, opacity: 0 });
+
+                setTimeout(() => {
+                    setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
+                }, 200);
+
+                return;
+            }
+
             if (!isResizing && !isNote) {
                 var overlapping = false;
 
@@ -272,6 +304,17 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         }
     }, [isEditing, text.length]);
 
+    // Handle rectangle deletion when dragging over the trashcan
+    useEffect(() => {
+        if (!isOverTrashcan || !isDragging) return;
+
+        if (isOverTrashcan && isDragging && !isResizing) {
+            const trashcan = document.querySelector('.trashcan');
+            trashcan.classList.add('deleting');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOverTrashcan]);
+
     // Convert grid position to time
     const gridPositionToTime = (position) => {
         const totalMinutes = position / gridSize * 15;
@@ -308,13 +351,14 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                             x: rectangleProps.x.get(),
                             y: rectangleProps.y.get(),
                         });
-                        return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg)`;
+                        return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${overTrashcanProps.scale.get()})`;
                     }),
                     height: rectangleProps.height,
                     position: 'absolute',
-                    backgroundColor: color,
+                    backgroundColor: overTrashcanProps.backgroundColor,
                     zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
-                    visibility: isVisible ? 'visible' : 'hidden'
+                    visibility: isVisible ? 'visible' : 'hidden',
+                    opacity: overTrashcanProps.opacity,
                 }}
                 onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
                 onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
@@ -392,7 +436,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         <div>
             {renderRectangle(!refresh)}
             {renderRectangle(refresh)}
-            {!isNote && isDragging && showGhost && (
+            {!isNote && isDragging && showGhost && !isOverTrashcan && (
                 <div className={`ghost size-${size}`}
                     style={{
                         left: `${0}px`,

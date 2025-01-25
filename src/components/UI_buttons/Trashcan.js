@@ -1,24 +1,40 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { Delete, DeleteOutline } from '@mui/icons-material';
 
-const Trashcan = ({ icon, deactivateRectangle, activeRectangle }) => {
+const Trashcan = ({ setIsOverTrashcan }) => {
     const trashcanRef = useRef(null);
+    const deleting = useRef(false);
 
-    const handleDrop = () => {
-        if (activeRectangle !== null) {
-            deactivateRectangle(activeRectangle);
-            trashcanRef.current.classList.remove('deleting');
+    useEffect(() => {
+        if (trashcanRef.current) {
+            const handleClassChange = () => {
+                deleting.current = trashcanRef.current.classList.contains('deleting');
+            };
+
+            const observer = new MutationObserver(handleClassChange);
+            observer.observe(trashcanRef.current, { attributes: true, attributeFilter: ['class'] });
+
+            return () => {
+                observer.disconnect();
+            };
         }
-    };
+    }, []);
+
 
     return (
         <div
             ref={trashcanRef}
             className="UI trashcan"
-            onMouseUp={handleDrop}
-            onTouchEnd={handleDrop}
-            onMouseEnter={() => { if (activeRectangle !== null) trashcanRef.current.classList.add('deleting'); }}
+            onMouseEnter={() => {
+                setIsOverTrashcan(true);
+            }}
+            onMouseLeave={() => {
+                setIsOverTrashcan(false);
+                deleting.current = false;
+                trashcanRef.current.classList.remove('deleting');
+            }}
         >
-            {icon}
+            {deleting.current ? <DeleteOutline /> : <Delete />}
         </div>
     );
 };

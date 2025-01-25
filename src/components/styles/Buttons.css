@@ -263,7 +263,7 @@
     transition: background-color 0.1s, transform 0.1s;
 }
 
-.trashcan.deleting:hover {
+.trashcan.deleting {
     background-color: #ff0000;
     transform: scale(1.25);
 }

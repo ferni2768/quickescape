@@ -12,6 +12,7 @@ function App() {
   const mouseFollowerRef = useRef(null);
   const appRef = useRef(null);
   const [locked, setLocked] = useState(true);
+  const [isOverTrashcan, setIsOverTrashcan] = useState(false);
 
   const {
     rectangles,
@@ -22,8 +23,7 @@ function App() {
     setAdjustedMousePosition,
     gridSize,
     getClientXY,
-    createRectangle,
-    deactivateRectangle
+    createRectangle
   } = useController();
 
   const {
@@ -185,7 +185,7 @@ function App() {
 
   return (
     <div className="App" ref={appRef}>
-      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle}
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} setIsOverTrashcan={setIsOverTrashcan}
         startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <animated.div
@@ -216,7 +216,7 @@ function App() {
             }}
           />
 
-          {rectangles.filter(rect => !rect.deactivated).map((rect) => (
+          {rectangles.map((rect) => (
             <React.Fragment key={rect.id}>
               <Rectangle
                 key={rect.id}
@@ -235,8 +235,8 @@ function App() {
                 size={rect.size}
                 icon={rect.icon}
                 isNote={rect.isNote}
-                deactivated={rect.deactivated}
                 refresh={refresh}
+                isOverTrashcan={isOverTrashcan}
               />
             </React.Fragment>
           ))}

@@ -4,11 +4,11 @@ import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
 import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
-import { Home, Star, Favorite, Lock, LockOpen, Delete, Visibility, VisibilityOff } from '@mui/icons-material';
+import { Home, Star, Favorite, Lock, LockOpen, Visibility, VisibilityOff } from '@mui/icons-material';
 import './styles/Buttons.css';
 
-const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deactivateRectangle, activeRectangle,
-    startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen }) => {
+const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startDate, endDate, setStartDate, setEndDate,
+    isOpen, setIsOpen, setIsOverTrashcan }) => {
 
     const [activeGroup, setActiveGroup] = useState(1);
     const [visible, setVisible] = useState(true); // State for visibility
@@ -104,7 +104,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, deacti
             </div>
 
             <div className="UI bottom-right-container">
-                <Trashcan className="UI trashcan" icon={<Delete />} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle} />
+                <Trashcan className="UI trashcan" setIsOverTrashcan={setIsOverTrashcan} />
             </div>
         </div>
     );
