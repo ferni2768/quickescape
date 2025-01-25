@@ -203,7 +203,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
         } else {
 
-            if (isOverTrashcan) {
+            if (isOverTrashcan && !isResizing) {
                 const trashcan = document.querySelector('.trashcan');
                 trashcan.classList.remove('deleting');
                 setRectangleState((prev) => ({ ...prev, deleting: true }));

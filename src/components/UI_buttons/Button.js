@@ -37,7 +37,7 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
             hasExecutedRef.current = true;
             resetButtonPosition();
         } else {
-            const dampingFactor = Math.min(1, 0.5 + Math.pow(distanceMoved / (distanceToDrag * 3), 1.1));
+            const dampingFactor = Math.min(1, 0.5 + Math.pow(distanceMoved / (distanceToDrag * 3), 0.9));
             const adjustedDistance = Math.max(0, distanceMoved * (1 - dampingFactor));
             const button = buttonRef.current;
             if (button) {
