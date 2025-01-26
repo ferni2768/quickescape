@@ -21,7 +21,7 @@ export function Camera(getClientXY, locked) {
 
     const cameraProps = useSpring({
         to: { x: viewportState.cameraPosition.x, y: viewportState.cameraPosition.y },
-        config: { mass: 1, tension: 170, friction: 26 },
+        config: { mass: 0.75, tension: 260, friction: 30 },
     });
 
     const [positionState, setPositionState] = useState({
