@@ -43,12 +43,17 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [editDistance, setEditDistance] = useState(0);
     const textareaRef = useRef(null);
 
-    // Spring animation for the rectangle
+    // Animation paremeters for rectangle position and size
+    const mass = 0.3 * (1 + zoom / 2) + (rectangleState.height * rectangleWidth) / 10;
     const rectangleProps = useSpring({
         x: rectangleState.absolutePosition.x,
         y: rectangleState.absolutePosition.y,
         height: rectangleState.height,
-        config: { mass: 1, tension: 170, friction: 26 },
+        config: {
+            mass: mass,
+            tension: 200 + mass * 240,
+            friction: (mass * 100) / 4
+        },
     });
 
     // State object with mouse position variables
@@ -390,7 +395,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                             ) : (
                                 <div style={{ flexDirection: "column" }}>
                                     <div className='rectangle-icon-small'>{icon}</div>
-                                    <div className='rectangle-time' style={{ visibility: rectangleState.height <= gridSize * 2 ? 'hidden' : 'visible' }}>
+                                    <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
                                         {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
                                             `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}` :
                                             `${calculateDuration(rectangleState.height)}h`}
