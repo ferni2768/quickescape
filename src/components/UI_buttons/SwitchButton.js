@@ -1,14 +1,13 @@
 import React from 'react';
-import '../../App.css';
 
-const SwitchButton = ({ group, setActiveGroup }) => {
+const SwitchButton = ({ group, activeGroup, setActiveGroup }) => {
     const handleSwitch = () => {
         setActiveGroup(group);
     };
 
     return (
         <button
-            className="UI switch-button"
+            className={`UI switch-button ${group === activeGroup ? 'selected' : ''}`}
             onClick={handleSwitch}
         >
             {group}

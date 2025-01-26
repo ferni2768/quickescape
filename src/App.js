@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { animated } from '@react-spring/web';
-import './App.css';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
 import UI from './components/UI';
 import dayjs from 'dayjs';
 import DateLabels from './components/DateLabels';
+import './components/styles/Room.css';
 
 function App() {
   const mouseFollowerRef = useRef(null);
+  const appRef = useRef(null);
   const [locked, setLocked] = useState(true);
+  const [isOverTrashcan, setIsOverTrashcan] = useState(false);
 
   const {
     rectangles,
@@ -21,8 +23,7 @@ function App() {
     setAdjustedMousePosition,
     gridSize,
     getClientXY,
-    createRectangle,
-    deactivateRectangle
+    createRectangle
   } = useController();
 
   const {
@@ -34,6 +35,7 @@ function App() {
     cameraProps,
     zoomProps,
     zoom,
+    refresh,
     isCameraDragging,
     positionState,
     setPositionState
@@ -43,6 +45,25 @@ function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(dayjs().add(2, 'day').toDate());
+
+  // Set the dimensions of the app screen
+  useEffect(() => {
+    const setAppDimensions = () => {
+      if (appRef.current) {
+        appRef.current.style.height = `${window.innerHeight}px`;
+        appRef.current.style.width = `${window.innerWidth}px`;
+      }
+    };
+
+    setAppDimensions();
+    window.addEventListener('resize', setAppDimensions);
+    window.addEventListener('orientationchange', setAppDimensions);
+
+    return () => {
+      window.removeEventListener('resize', setAppDimensions);
+      window.removeEventListener('orientationchange', setAppDimensions);
+    };
+  }, []);
 
   // Update position on touch/mouse move
   useEffect(() => {
@@ -59,8 +80,9 @@ function App() {
         mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
 
         // Calculate adjusted position
+        const adjustedX = (clientX - cameraRect.left) / zoom;
         const adjustedY = (clientY - cameraRect.top) / zoom;
-        setAdjustedMousePosition(adjustedY);
+        setAdjustedMousePosition({ x: adjustedX, y: adjustedY });
       }
 
       if (activeRectangle !== null) {
@@ -75,7 +97,6 @@ function App() {
       }
     };
 
-    // Attach both mousemove and touchmove events
     window.addEventListener('mousemove', handleMoveWrapper);
     window.addEventListener('touchmove', handleMoveWrapper, { passive: false });
 
@@ -83,13 +104,16 @@ function App() {
       window.removeEventListener('mousemove', handleMoveWrapper);
       window.removeEventListener('touchmove', handleMoveWrapper);
     };
-  }, [activeRectangle, rectangles, handleMouseMoveCamera, positionState, setPositionState, zoom, centerSectionRef, getClientXY, setAdjustedMousePosition]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, activeRectangle, rectangles, positionState, setPositionState, getClientXY]);
 
   // Handle touch/mouse down to start dragging
   useEffect(() => {
     const handleDown = (event) => {
       event.preventDefault();
-      // Find the rectangle that matches the event target's class
+
+      // Check if the event target is part of the DatePicker or find a rectangle
+      if (event.target.closest('.react-datepicker')) return;
       const rect = rectangles.find(r => event.target.classList.contains(`rectangle-${r.id}`));
       const UI = event.target.classList.contains('UI') ? event.target : null;
 
@@ -160,8 +184,8 @@ function App() {
 
 
   return (
-    <div className="App">
-      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} deactivateRectangle={deactivateRectangle} activeRectangle={activeRectangle}
+    <div className="App" ref={appRef}>
+      <UI createRectangle={createRectangle} mouseFollowerRef={mouseFollowerRef} zoom={zoom} locked={locked} setLocked={setLocked} setIsOverTrashcan={setIsOverTrashcan}
         startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} />
 
       <animated.div
@@ -192,13 +216,14 @@ function App() {
             }}
           />
 
-          {rectangles.filter(rect => !rect.deactivated).map((rect) => (
+          {rectangles.map((rect) => (
             <React.Fragment key={rect.id}>
               <Rectangle
                 key={rect.id}
                 viewportState={viewportState}
                 zoom={zoom}
                 centerSectionRef={centerSectionRef}
+                mouseFollowerRef={mouseFollowerRef}
                 rect={rect}
                 adjustedMousePosition={adjustedMousePosition}
                 gridSize={gridSize}
@@ -210,7 +235,8 @@ function App() {
                 size={rect.size}
                 icon={rect.icon}
                 isNote={rect.isNote}
-                deactivated={rect.deactivated}
+                refresh={refresh}
+                isOverTrashcan={isOverTrashcan}
               />
             </React.Fragment>
           ))}

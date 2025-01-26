@@ -1,0 +1,22 @@
+.center-section {
+    width: 100px;
+    height: var(--center-section-height, 5760px);
+    background-color: rgba(0, 0, 0, 0.1);
+    position: absolute;
+    border-radius: 1.5ch;
+}
+
+.date-labels {
+    position: absolute;
+    left: -300px;
+    top: 0;
+    width: 200px;
+    text-align: right;
+    z-index: 10;
+}
+
+.date-label {
+    position: absolute;
+    font-size: 40px;
+    color: black;
+}

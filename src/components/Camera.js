@@ -12,6 +12,7 @@ export function Camera(getClientXY, locked) {
 
     const zoomLimits = { min: 0.5, max: 2 };
     const zoomProps = useSpring({ zoom });
+    const [refresh, setRefresh] = useState(false);
 
     const [viewportState, setViewportState] = useState({
         windowSize: { width: window.innerWidth, height: window.innerHeight },
@@ -20,7 +21,7 @@ export function Camera(getClientXY, locked) {
 
     const cameraProps = useSpring({
         to: { x: viewportState.cameraPosition.x, y: viewportState.cameraPosition.y },
-        config: { mass: 1, tension: 170, friction: 26 },
+        config: { mass: 0.75, tension: 260, friction: 30 },
     });
 
     const [positionState, setPositionState] = useState({
@@ -125,6 +126,7 @@ export function Camera(getClientXY, locked) {
     // Handle zooming
     const handleZoom = useCallback((delta) => {
         setZoom((prevZoom) => prevZoom + delta);
+        setRefresh((prev) => !prev);
     }, []);
 
     // Handle pinch to zoom
@@ -163,6 +165,7 @@ export function Camera(getClientXY, locked) {
     const handleTouchEnd = useCallback(() => {
         setTouchStartDistance(null);
         setTouchMidpoint(null);
+        setRefresh((prev) => !prev);
 
         setZoom((prevZoom) => {
             if (prevZoom < zoomLimits.min) {
@@ -230,6 +233,7 @@ export function Camera(getClientXY, locked) {
         cameraProps,
         zoomProps,
         zoom,
+        refresh,
         isCameraDragging,
         positionState,
         setPositionState
