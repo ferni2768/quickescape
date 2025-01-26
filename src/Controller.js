@@ -28,19 +28,10 @@ export const useController = () => {
             color: color,
             size: size,
             icon: icon,
-            isNote: group === 0,
-            deactivated: false
+            isNote: group === 0
         };
         setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
         setActiveRectangle(newRectangle.id - 1);
-    };
-
-    const deactivateRectangle = (id) => {
-        setRectangles(prevRectangles =>
-            prevRectangles.map(rect =>
-                rect.id === id + 1 ? { ...rect, deactivated: true } : rect
-            )
-        );
     };
 
 
@@ -53,7 +44,6 @@ export const useController = () => {
         setAdjustedMousePosition,
         gridSize,
         getClientXY,
-        createRectangle,
-        deactivateRectangle
+        createRectangle
     };
 };

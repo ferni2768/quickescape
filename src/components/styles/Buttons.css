@@ -7,6 +7,46 @@
     position: absolute;
     top: calc(2.3vh + 0.5rem);
     left: calc(2.3vh + 0.5rem);
+    animation-duration: 0.4s;
+    animation-fill-mode: forwards;
+}
+
+.out.top-left-container {
+    animation-name: outTop;
+}
+
+.in.top-left-container {
+    animation-name: inTop;
+}
+
+@keyframes outTop {
+    0% {
+        transform: translateY(0ch);
+    }
+
+    50% {
+        transform: translateY(2ch);
+    }
+
+    100% {
+        transform: translateY(-20ch);
+        visibility: hidden;
+    }
+}
+
+@keyframes inTop {
+    0% {
+        transform: translateY(-20ch);
+        visibility: visible;
+    }
+
+    50% {
+        transform: translateY(2ch);
+    }
+
+    100% {
+        transform: translateY(0ch);
+    }
 }
 
 .middle-left-container {
@@ -16,11 +56,58 @@
     flex-direction: column;
     left: 0px;
     z-index: 999;
+    animation-duration: 0.4s;
+    animation-fill-mode: forwards;
+}
+
+.out.middle-left-container {
+    animation-name: outMiddle;
+}
+
+.in.middle-left-container {
+    animation-name: inMiddle;
+}
+
+@keyframes outMiddle {
+    0% {
+        transform: translateX(0ch);
+    }
+
+    50% {
+        transform: translateX(2ch);
+    }
+
+    100% {
+        transform: translateX(-150%);
+        visibility: hidden;
+    }
+}
+
+@keyframes inMiddle {
+    0% {
+        transform: translateX(-150%);
+        visibility: visible;
+    }
+
+    50% {
+        transform: translateX(2ch);
+    }
+
+    100% {
+        transform: translateX(0ch);
+    }
 }
 
 .rectangle-button-container {
-    display: flex;
-    flex-direction: column;
+    position: relative;
+    height: auto;
+    width: auto;
+}
+
+.rectangle-buttons-group {
+    position: absolute;
+    pointer-events: none;
+    bottom: 0;
 }
 
 .switch-buttons-container {
@@ -28,13 +115,14 @@
     border-top-right-radius: 10ch;
     border-bottom-right-radius: 10ch;
     padding: 0.1ch;
-    padding-left: 0.4ch;
+    padding-left: 3.4ch;
     padding-right: 0.1ch;
     margin-top: 1.5ch;
     pointer-events: none;
     font-size: calc(0.75vh + 1em);
     display: flex;
     flex-direction: row;
+    transform: translateX(-3ch);
 }
 
 .bottom-left-container {
@@ -53,12 +141,12 @@
 
 .rectangle-button {
     font-size: calc(0.75vh + 1em);
-    width: 9ch;
+    width: 12ch;
     background-color: #4CAF50;
     border: none;
     color: white;
     padding: calc(0.2em);
-    padding-left: 1ch;
+    padding-left: 4ch;
     text-align: center;
     text-decoration: none;
     display: flex;
@@ -67,7 +155,54 @@
     cursor: pointer;
     border-top-right-radius: 1ch;
     border-bottom-right-radius: 1ch;
-    transition: transform 0.3s ease-out;
+    transition: transform 0.2s ease-out;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+    transform: translateX(-3ch);
+}
+
+.rectangle-button-out {
+    animation-name: buttonOut;
+}
+
+.rectangle-button-in {
+    animation-name: buttonIn;
+}
+
+.no-animation {
+    animation: none !important;
+}
+
+@keyframes buttonOut {
+    0% {
+        transform: translateX(-3ch);
+    }
+
+    30% {
+        transform: translateX(-1ch);
+    }
+
+    100% {
+        transform: translateX(-150%);
+    }
+}
+
+@keyframes buttonIn {
+    0% {
+        transform: translateX(-150%);
+    }
+
+    35% {
+        transform: translateX(-150%);
+    }
+
+    65% {
+        transform: translateX(-2ch);
+    }
+
+    100% {
+        transform: translateX(-3ch);
+    }
 }
 
 .switch-button {
@@ -83,26 +218,14 @@
     margin: 0.2ch;
     cursor: pointer;
     border-radius: 5ch;
+    transition: background-color 0.1s, transform 0.1s;
 }
 
 .note-button {
     margin-top: 20px;
 }
 
-.view-button {
-    background-color: #41444B;
-    border: none;
-    color: white;
-    margin-left: calc(0.3vw + 0.5em);
-    width: calc(0.3vw + 3em);
-    height: calc(0.3vw + 3em);
-    cursor: pointer;
-    border-radius: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
+.view-button,
 .lock-button {
     background-color: #41444B;
     border: none;
@@ -114,10 +237,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.1s, transform 0.1s;
+}
+
+.view-button:hover,
+.lock-button:hover,
+.switch-button:hover {
+    background-color: #5a5d63;
+    transform: scale(1.075);
+}
+
+.view-button.hidden,
+.lock-button.unlocked,
+.switch-button.selected {
+    background-color: #848484;
+}
+
+.view-button {
+    margin-left: calc(0.3vw + 0.5em);
 }
 
 .trashcan {
-    background-color: #d81c1c;
+    background-color: #cc1c1c;
     border: none;
     color: white;
     width: calc(0.3vw + 3.5em);
@@ -127,6 +268,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.1s, transform 0.1s;
+}
+
+.trashcan.deleting {
+    background-color: #ff0000;
+    transform: scale(1.25);
 }
 
 .rectangle-button svg {
