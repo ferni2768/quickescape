@@ -111,6 +111,8 @@
 }
 
 .switch-buttons-container {
+    width: 10.8ch;
+    box-sizing: border-box;
     background-color: #e3e3e3;
     border-top-right-radius: 10ch;
     border-bottom-right-radius: 10ch;

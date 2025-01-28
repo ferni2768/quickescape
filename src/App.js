@@ -154,6 +154,7 @@ function App() {
       window.removeEventListener('touchstart', handleDown);
       window.removeEventListener('mousedown', handleDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rectangles, handleMouseDownCamera, setPositionState, setActiveRectangle, setRectangles]);
 
   // Handle touch/mouse up to stop dragging

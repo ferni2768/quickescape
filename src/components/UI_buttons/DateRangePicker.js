@@ -63,6 +63,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
         return () => {
             window.removeEventListener('touchstart', handleTouchToClick);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     // Set min and max dates
