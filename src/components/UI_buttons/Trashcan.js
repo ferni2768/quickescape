@@ -20,19 +20,51 @@ const Trashcan = ({ setIsOverTrashcan }) => {
         }
     }, []);
 
+    const handleEnter = () => {
+        setIsOverTrashcan(true);
+    };
+
+    const handleLeave = () => {
+        setIsOverTrashcan(false);
+        deleting.current = false;
+        trashcanRef.current.classList.remove('deleting');
+    };
+
+    const handleTouchMove = (event) => {
+        if (trashcanRef.current) {
+            const touch = event.touches[0];
+            const trashcanRect = trashcanRef.current.getBoundingClientRect();
+            const isOver = (
+                touch.clientX >= trashcanRect.left &&
+                touch.clientX <= trashcanRect.right &&
+                touch.clientY >= trashcanRect.top &&
+                touch.clientY <= trashcanRect.bottom
+            );
+            setIsOverTrashcan(isOver);
+
+            if (!isOver) {
+                handleLeave();
+            }
+        }
+    };
+
+    useEffect(() => {
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        return () => {
+            window.removeEventListener('touchmove', handleTouchMove);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
 
     return (
         <div
             ref={trashcanRef}
             className="UI trashcan"
-            onMouseEnter={() => {
-                setIsOverTrashcan(true);
-            }}
-            onMouseLeave={() => {
-                setIsOverTrashcan(false);
-                deleting.current = false;
-                trashcanRef.current.classList.remove('deleting');
-            }}
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
+            onTouchStart={handleEnter}
+            onTouchEnd={handleLeave}
         >
             {deleting.current ? <DeleteOutline /> : <Delete />}
         </div>

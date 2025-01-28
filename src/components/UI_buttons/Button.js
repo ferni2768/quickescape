@@ -102,7 +102,7 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
             className={`UI rectangle-button no-animation`}
             style={{ display: group !== activeGroup && group !== 0 && startRef.current < 2 ? 'none' : '', backgroundColor: color, zIndex: group === activeGroup || group === 0 ? 100 : 90 }}
             onMouseDown={handleMouseDown}
-            onTouchStart={() => { handleMouseDown(); buttonRef.current.style.transform = 'translateX(-2ch)'; }}
+            onTouchStart={(e) => { handleMouseDown(e); buttonRef.current.style.transform = 'translateX(-2ch)'; }}
             onMouseEnter={() => { buttonRef.current.style.transform = 'translateX(-2ch)'; }}
             onMouseLeave={() => { buttonRef.current.style.transform = 'translateX(-3ch)'; }}
             onTouchEnd={() => { buttonRef.current.style.transform = 'translateX(-3ch)'; }}

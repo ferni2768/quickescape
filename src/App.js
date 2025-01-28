@@ -120,6 +120,21 @@ function App() {
       if (rect) {
         const rectIndex = rectangles.findIndex(instance => instance.id === rect.id);
         if (rectIndex !== -1) {
+          const coords = getClientXY(event);
+          if (!coords) return;
+          const { clientX, clientY } = coords;
+
+          if (mouseFollowerRef.current && centerSectionRef.current) {
+            const cameraRect = centerSectionRef.current.getBoundingClientRect();
+            mouseFollowerRef.current.style.left = `${clientX - cameraRect.left - 47.5 * zoom}px`;
+            mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
+
+            // Calculate adjusted position
+            const adjustedX = (clientX - cameraRect.left) / zoom;
+            const adjustedY = (clientY - cameraRect.top) / zoom;
+            setAdjustedMousePosition({ x: adjustedX, y: adjustedY });
+          }
+
           setActiveRectangle(rectIndex);
           setRectangles(prevRectangles => {
             const newRectangles = [...prevRectangles];

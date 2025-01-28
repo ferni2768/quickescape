@@ -9,6 +9,7 @@ const SwitchButton = ({ group, activeGroup, setActiveGroup }) => {
         <button
             className={`UI switch-button ${group === activeGroup ? 'selected' : ''}`}
             onClick={handleSwitch}
+            onTouchEnd={handleSwitch}
         >
             {group}
         </button>
