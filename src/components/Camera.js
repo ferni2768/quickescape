@@ -81,7 +81,7 @@ export function Camera(getClientXY, locked) {
     }, [centerCamera]);
 
     // Update camera position on mouse/touch move
-    const handleMouseMoveCamera = useCallback((event, positionState, setPositionState, zoom) => {
+    const handleMouseMoveCamera = useCallback((event) => {
         if (event.touches && event.touches.length > 1) return;
         const { clientX, clientY } = getClientXY(event);
         if (isCameraDragging) {
@@ -98,10 +98,10 @@ export function Camera(getClientXY, locked) {
                 offset: { x: newMousePosition.x, y: newMousePosition.y },
             }));
         }
-    }, [isCameraDragging, getClientXY]);
+    }, [isCameraDragging, getClientXY, positionState.offset.x, positionState.offset.y, zoom]);
 
     // Handle mouse/touch down to start dragging the camera
-    const handleMouseDownCamera = useCallback((event, setPositionState) => {
+    const handleMouseDownCamera = useCallback((event) => {
         const { clientX, clientY } = getClientXY(event);
         setIsCameraDragging(true);
         document.body.style.cursor = 'grabbing';
@@ -112,7 +112,7 @@ export function Camera(getClientXY, locked) {
     }, [getClientXY]);
 
     // Handle mouse/touch up to stop dragging the camera
-    const handleMouseUpCamera = useCallback((positionState, setPositionState) => {
+    const handleMouseUpCamera = useCallback((setPositionState) => {
         setIsCameraDragging(false);
         document.body.style.cursor = 'default';
         setPositionState(prev => ({

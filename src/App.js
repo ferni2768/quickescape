@@ -86,15 +86,13 @@ function App() {
       }
 
       if (activeRectangle !== null) {
-        const instance = rectangles[activeRectangle];
-        if (instance.isDragging || instance.isResizing) {
-          instance.isDragging = true;
-        } else {
-          handleMouseMoveCamera(event, positionState, setPositionState, zoom);
+        const instance = rectangles.find(rect => rect.id === activeRectangle);
+        if (instance) {
+          if (instance.isDragging || instance.isResizing) {
+            instance.isDragging = true;
+          }
         }
-      } else {
-        handleMouseMoveCamera(event, positionState, setPositionState, zoom);
-      }
+      } else handleMouseMoveCamera(event);
     };
 
     window.addEventListener('mousemove', handleMoveWrapper);
@@ -105,7 +103,7 @@ function App() {
       window.removeEventListener('touchmove', handleMoveWrapper);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom, activeRectangle, rectangles, positionState, setPositionState, getClientXY]);
+  }, [zoom, positionState, setPositionState, getClientXY]);
 
   // Handle touch/mouse down to start dragging
   useEffect(() => {
@@ -118,32 +116,29 @@ function App() {
       const UI = event.target.classList.contains('UI') ? event.target : null;
 
       if (rect) {
-        const rectIndex = rectangles.findIndex(instance => instance.id === rect.id);
-        if (rectIndex !== -1) {
-          const coords = getClientXY(event);
-          if (!coords) return;
-          const { clientX, clientY } = coords;
+        const coords = getClientXY(event);
+        if (!coords) return;
+        const { clientX, clientY } = coords;
 
-          if (mouseFollowerRef.current && centerSectionRef.current) {
-            const cameraRect = centerSectionRef.current.getBoundingClientRect();
-            mouseFollowerRef.current.style.left = `${clientX - cameraRect.left - 47.5 * zoom}px`;
-            mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
+        if (mouseFollowerRef.current && centerSectionRef.current) {
+          const cameraRect = centerSectionRef.current.getBoundingClientRect();
+          mouseFollowerRef.current.style.left = `${clientX - cameraRect.left - 47.5 * zoom}px`;
+          mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
 
-            // Calculate adjusted position
-            const adjustedX = (clientX - cameraRect.left) / zoom;
-            const adjustedY = (clientY - cameraRect.top) / zoom;
-            setAdjustedMousePosition({ x: adjustedX, y: adjustedY });
-          }
-
-          setActiveRectangle(rectIndex);
-          setRectangles(prevRectangles => {
-            const newRectangles = [...prevRectangles];
-            newRectangles[rectIndex].isDragging = true;
-            return newRectangles;
-          });
+          // Calculate adjusted position
+          const adjustedX = (clientX - cameraRect.left) / zoom;
+          const adjustedY = (clientY - cameraRect.top) / zoom;
+          setAdjustedMousePosition({ x: adjustedX, y: adjustedY });
         }
-      } else if (!UI) {
-        handleMouseDownCamera(event, setPositionState);
+
+        setActiveRectangle(rect.id);
+        setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: instance.id === rect.id })));
+      } else {
+        // If no rectangle is found, set all to isDragging: false
+        setActiveRectangle(null);
+        setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: false })));
+
+        if (!UI) handleMouseDownCamera(event);
       }
     };
 
@@ -162,14 +157,14 @@ function App() {
     const handleUp = (event) => {
       event.preventDefault();
       if (activeRectangle !== null) {
-        setRectangles(prevRectangles => {
-          const newRectangles = [...prevRectangles];
-          newRectangles[activeRectangle].isDragging = false;
-          return newRectangles;
-        });
+        setRectangles(prevRectangles =>
+          prevRectangles.map(rect =>
+            rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
+          )
+        );
         setActiveRectangle(null);
       } else if (isCameraDragging) {
-        handleMouseUpCamera(positionState, setPositionState);
+        handleMouseUpCamera(setPositionState);
       }
     };
 

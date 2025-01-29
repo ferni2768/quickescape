@@ -65,6 +65,7 @@ const Trashcan = ({ setIsOverTrashcan }) => {
             onMouseLeave={handleLeave}
             onTouchStart={handleEnter}
             onTouchEnd={handleLeave}
+            onTouchCancel={handleLeave}
         >
             {deleting.current ? <DeleteOutline /> : <Delete />}
         </div>

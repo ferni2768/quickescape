@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 export const RECTANGLE_SIZES = { 1: 150, 2: 300 };
 
 export const useController = () => {
@@ -6,6 +6,9 @@ export const useController = () => {
     const [activeRectangle, setActiveRectangle] = useState(null);
     const [adjustedMousePosition, setAdjustedMousePosition] = useState({ x: 0, y: 0 });
     const [gridSize,] = useState(20);
+
+    // Unique ID counter for rectangles
+    const idCounter = useRef(0);
 
     // Function to get client X and Y coordinates
     const getClientXY = useCallback((event) => {
@@ -18,7 +21,7 @@ export const useController = () => {
     // Function to create a new rectangle
     const createRectangle = (x, y, height, color, size, icon, group) => {
         const newRectangle = {
-            id: rectangles.length + 1,
+            id: idCounter.current++,
             x: x,
             y: y,
             height: height,
@@ -31,7 +34,7 @@ export const useController = () => {
             isNote: group === 0
         };
         setRectangles(prevRectangles => [...prevRectangles, newRectangle]);
-        setActiveRectangle(newRectangle.id - 1);
+        setActiveRectangle(newRectangle.id);
     };
 
 
