@@ -11,8 +11,29 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
     isOpen, setIsOpen, setIsOverTrashcan }) => {
 
     const [activeGroup, setActiveGroup] = useState(1);
-    const [visible, setVisible] = useState(true); // State for visibility
+    const [visible, setVisible] = useState(true);
     const [twoLines, setTwoLines] = useState(false);
+    const [isLockTouched, setIsLockTouched] = useState(false);
+    const [isViewTouched, setIsViewTouched] = useState(false);
+
+    const handleLockTouchStart = () => {
+        setIsLockTouched(true);
+    };
+
+    const handleLockTouchEnd = () => {
+        setIsLockTouched(false);
+        setLocked(!locked);
+    };
+
+    const handleViewTouchStart = () => {
+        setIsViewTouched(true);
+    };
+
+    const handleViewTouchEnd = () => {
+        setIsViewTouched(false);
+        setVisible(!visible);
+    };
+
 
     const buttonGroups = {
         1: [
@@ -94,12 +115,22 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
             </div>
 
             <div className="UI bottom-left-container">
-                <button className={`UI lock-button ${locked ? '' : 'unlocked'}`} onClick={() => setLocked(!locked)} onTouchStart={() => setLocked(!locked)}>
-                    {locked ? <Lock /> : <LockOpen />}
+                <button
+                    className={`UI lock-button ${locked ? '' : 'unlocked'} ${isLockTouched ? 'hover' : ''}`}
+                    onClick={() => setLocked(!locked)}
+                    onTouchStart={handleLockTouchStart}
+                    onTouchEnd={handleLockTouchEnd}
+                >
+                    {locked ? <Lock style={{ pointerEvents: 'none' }} /> : <LockOpen style={{ pointerEvents: 'none' }} />}
                 </button>
 
-                <button className={`UI view-button ${visible ? '' : 'hidden'}`} onClick={() => setVisible(!visible)} onTouchStart={() => setVisible(!visible)}>
-                    {visible ? <Visibility /> : <VisibilityOff />}
+                <button
+                    className={`UI view-button ${visible ? '' : 'hidden'} ${isViewTouched ? 'hover' : ''}`}
+                    onClick={() => setVisible(!visible)}
+                    onTouchStart={handleViewTouchStart}
+                    onTouchEnd={handleViewTouchEnd}
+                >
+                    {visible ? <Visibility style={{ pointerEvents: 'none' }} /> : <VisibilityOff style={{ pointerEvents: 'none' }} />}
                 </button>
             </div>
 

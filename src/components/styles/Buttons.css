@@ -247,7 +247,10 @@
 
 .view-button:hover,
 .lock-button:hover,
-.switch-button:hover {
+.switch-button:hover,
+.switch-button.hover,
+.view-button.hover,
+.lock-button.hover {
     background-color: #5a5d63;
     transform: scale(1.075);
 }

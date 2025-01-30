@@ -67,7 +67,7 @@ const Trashcan = ({ setIsOverTrashcan }) => {
             onTouchEnd={handleLeave}
             onTouchCancel={handleLeave}
         >
-            {deleting.current ? <DeleteOutline /> : <Delete />}
+            {deleting.current ? <DeleteOutline style={{ pointerEvents: 'none' }} /> : <Delete style={{ pointerEvents: 'none' }} />}
         </div>
     );
 };

@@ -107,6 +107,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         event.preventDefault();
 
         if (state === 0) {
+            if (isEditing) setIsEditing(false);
             setState(1);
             event.stopPropagation();
 
