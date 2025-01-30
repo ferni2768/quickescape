@@ -66,7 +66,24 @@ const BigTextEditor = ({ setTwoLines }) => {
 
     // Handle blur to remove the last line break
     const handleBlur = () => {
-        let cleanText = text.replace(/(\n\u200B?|\u200B)$/, '');
+        const textElement = textRef.current;
+        const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight);
+        textElement.textContent = text;
+        const textHeight = textElement.scrollHeight;
+        const numberOfLines = textHeight / lineHeight;
+
+        let cleanText = text;
+
+        // If there are more than 2 lines, trim the excess characters
+        if (numberOfLines > 2.5) {
+            while (textElement.scrollHeight / lineHeight > 2.5 && cleanText.length > 0) {
+                cleanText = cleanText.slice(0, -1);
+                textElement.textContent = cleanText;
+            }
+        }
+
+        cleanText = cleanText.replace(/(\n\u200B?|\u200B)$/, '');
+
         if (cleanText !== text) setTwoLines(false);
         setText(cleanText);
         setIsEditing(false);
