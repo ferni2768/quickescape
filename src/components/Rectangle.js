@@ -137,10 +137,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     },
                 }));
             }
-
-            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
-            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
-            setEditDistance(Math.sqrt(dx * dx + dy * dy));
         } else if (state === 1) {
 
             if (event.touches && event.touches.length > 1) {
@@ -149,6 +145,11 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             }
 
             const { clientX, clientY } = getClientXY(event);
+
+            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
+            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
+            setEditDistance(Math.sqrt(dx * dx + dy * dy) / 10);
+
             if (!isResizing) {
                 const newMousePosition = { x: clientX, y: clientY };
                 setPositionState((prev) => ({
@@ -193,11 +194,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
         if (isDragging && !isResizing && isOverTrashcan) {
-            setOverTrashcanProps({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
+            setOverTrashcanProps.start({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
         } else {
-            if (!rectangleState.deleting) {
-                setOverTrashcanProps({ scale: 1, opacity: 1, backgroundColor: color });
-            }
+            if (!rectangleState.deleting) setOverTrashcanProps.start({ scale: 1, opacity: 1, backgroundColor: color });
         }
     }, [isDragging, isResizing, isOverTrashcan, setOverTrashcanProps, rectangleState.deleting, color]);
 
@@ -206,13 +205,21 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         if (isDragging) {
             window.addEventListener('mousemove', handleMouseRectangle);
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
+
+            setStartTime(performance.now());
+            setEditDistance(0);
         } else {
+
+            if (!justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
+                setIsEditing(true);
+
+            setStartTime(null);
 
             if (isOverTrashcan && !isResizing) {
                 const trashcan = document.querySelector('.trashcan');
                 trashcan.classList.remove('deleting');
                 setRectangleState((prev) => ({ ...prev, deleting: true }));
-                setOverTrashcanProps({ scale: 0.7, opacity: 0 });
+                setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
 
                 setTimeout(() => {
                     setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
@@ -287,12 +294,13 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Handle click outside to exit editing mode
     useEffect(() => {
         const handleClickOutside = (event) => {
+            event.preventDefault();
             if (isEditing && !event.target.closest(`.rectangle-${rect.id}`)) {
                 setIsEditing(false);
             }
         };
         window.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('touchstart', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside, { passive: false });
         return () => {
             window.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('touchstart', handleClickOutside);
@@ -364,18 +372,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
                     visibility: isVisible ? 'visible' : 'hidden',
                     opacity: overTrashcanProps.opacity,
-                }}
-                onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
-                onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
-                onMouseUp={() => {
-                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
-                    setStartTime(null);
-                    setEditDistance(0);
-                }}
-                onTouchEnd={() => {
-                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
-                    setStartTime(null);
-                    setEditDistance(0);
                 }}
             >
                 <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>

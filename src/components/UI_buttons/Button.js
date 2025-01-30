@@ -77,8 +77,8 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
         if (isDragging) {
             document.addEventListener('mousemove', moveListener);
             document.addEventListener('mouseup', upListener);
-            document.addEventListener('touchmove', moveListener);
-            document.addEventListener('touchend', upListener);
+            document.addEventListener('touchmove', moveListener, { passive: false });
+            document.addEventListener('touchend', upListener, { passive: false });
         } else {
             document.removeEventListener('mousemove', moveListener);
             document.removeEventListener('mouseup', upListener);

@@ -25,7 +25,7 @@ const BigTextEditor = ({ setTwoLines }) => {
                 setIsEditing(false);
         };
         window.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('touchstart', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside, { passive: false });
         return () => {
             window.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('touchstart', handleClickOutside);

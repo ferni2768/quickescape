@@ -69,6 +69,7 @@ function App() {
   useEffect(() => {
     const handleMoveWrapper = (event) => {
       event.preventDefault();
+      event.stopPropagation();
 
       const coords = getClientXY(event);
       if (!coords) return;
@@ -109,6 +110,7 @@ function App() {
   useEffect(() => {
     const handleDown = (event) => {
       event.preventDefault();
+      event.stopPropagation();
 
       // Check if the event target is part of the DatePicker or find a rectangle
       if (event.target.closest('.react-datepicker')) return;
@@ -156,6 +158,8 @@ function App() {
   useEffect(() => {
     const handleUp = (event) => {
       event.preventDefault();
+      event.stopPropagation();
+
       if (activeRectangle !== null) {
         setRectangles(prevRectangles =>
           prevRectangles.map(rect =>

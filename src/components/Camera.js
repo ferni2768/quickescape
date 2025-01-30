@@ -77,7 +77,11 @@ export function Camera(getClientXY, locked) {
         };
 
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
+        }
     }, [centerCamera]);
 
     // Update camera position on mouse/touch move
@@ -163,6 +167,7 @@ export function Camera(getClientXY, locked) {
 
     // Handle touch end to stop pinch to zoom
     const handleTouchEnd = useCallback(() => {
+        if (!isCameraDragging) return;
         setTouchStartDistance(null);
         setTouchMidpoint(null);
         setRefresh((prev) => !prev);
@@ -175,7 +180,7 @@ export function Camera(getClientXY, locked) {
             }
             return prevZoom;
         });
-    }, [zoomLimits.max, zoomLimits.min]);
+    }, [zoomLimits.max, zoomLimits.min, isCameraDragging]);
 
     // Handle zooming with ctrl button
     useEffect(() => {
@@ -196,6 +201,7 @@ export function Camera(getClientXY, locked) {
 
     // Add event listeners for touch events
     useEffect(() => {
+        if (!isCameraDragging) return;
         const handleTouchStart = (event) => {
             if (event.touches.length === 2) {
                 const touch1 = event.touches[0];
@@ -215,14 +221,14 @@ export function Camera(getClientXY, locked) {
 
         window.addEventListener('touchstart', handleTouchStart, { passive: false });
         window.addEventListener('touchmove', handleTouchMove, { passive: false });
-        window.addEventListener('touchend', handleTouchEnd);
+        window.addEventListener('touchend', handleTouchEnd, { passive: false });
 
         return () => {
             window.removeEventListener('touchstart', handleTouchStart);
             window.removeEventListener('touchmove', handleTouchMove);
             window.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [handleTouchMove, handleTouchEnd]);
+    }, [handleTouchMove, handleTouchEnd, isCameraDragging]);
 
     return {
         viewportState,

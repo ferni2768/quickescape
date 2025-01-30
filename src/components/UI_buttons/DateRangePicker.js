@@ -57,7 +57,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
     };
 
     useEffect(() => {
-        if (isOpen) window.addEventListener('touchstart', handleTouchToClick);
+        if (isOpen) window.addEventListener('touchstart', handleTouchToClick, { passive: false });
         else window.removeEventListener('touchstart', handleTouchToClick);
 
         return () => {
