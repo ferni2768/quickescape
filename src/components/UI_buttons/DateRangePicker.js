@@ -10,10 +10,13 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
     const [tempEndDate, setTempEndDate] = useState(endDate);
     const datePickerRef = useRef(null);
 
-    const handleDateChange = (dates) => {
-        const [start, end] = dates;
-        setTempStartDate(start);
-        setTempEndDate(end);
+    // Set min and max dates
+    const minDate = dayjs().toDate();
+    const maxDate = startDate ? dayjs(startDate).add(1, 'month').toDate() : null;
+
+    const clickIn = () => {
+        setAnimationClass('fadeIn');
+        setIsOpen(true);
     };
 
     const clickOut = () => {
@@ -30,14 +33,10 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
         }, 200);
     };
 
-    const clickIn = () => {
-        setAnimationClass('fadeIn');
-        setIsOpen(true);
-    };
-
     // Simulate click on touch devices
     const handleTouchToClick = (e) => {
-        if (!isOpen) return;
+        e.preventDefault();
+        e.stopPropagation();
 
         const touch = e.touches[0];
         const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -64,11 +63,13 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
             window.removeEventListener('touchstart', handleTouchToClick);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
+    }, [isOpen, tempStartDate, tempEndDate, startDate, endDate]);
 
-    // Set min and max dates
-    const minDate = dayjs().toDate();
-    const maxDate = startDate ? dayjs(startDate).add(1, 'month').toDate() : null;
+    const handleDateChange = (dates) => {
+        const [start, end] = dates;
+        setTempStartDate(start);
+        setTempEndDate(end);
+    };
 
 
     return (
