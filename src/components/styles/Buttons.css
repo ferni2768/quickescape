@@ -268,7 +268,6 @@
     color: white;
     width: calc(0.3vw + 3.5em);
     height: calc(0.3vw + 3.5em);
-    cursor: pointer;
     border-radius: 100%;
     display: flex;
     align-items: center;

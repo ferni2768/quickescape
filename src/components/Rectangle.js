@@ -218,6 +218,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             if (isOverTrashcan && !isResizing) {
                 const trashcan = document.querySelector('.trashcan');
                 trashcan.classList.remove('deleting');
+                document.body.style.cursor = 'default';
                 setRectangleState((prev) => ({ ...prev, deleting: true }));
                 setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
 
