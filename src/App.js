@@ -55,13 +55,16 @@ function App() {
       }
     };
 
-    setAppDimensions();
-    window.addEventListener('resize', setAppDimensions);
-    window.addEventListener('orientationchange', setAppDimensions);
+    setAppDimensions(); // Set dimensions on mount
+
+    const handleResizeOrOrientationChange = () => { setAppDimensions(); };
+
+    window.addEventListener('resize', handleResizeOrOrientationChange);
+    window.addEventListener('orientationchange', handleResizeOrOrientationChange);
 
     return () => {
-      window.removeEventListener('resize', setAppDimensions);
-      window.removeEventListener('orientationchange', setAppDimensions);
+      window.removeEventListener('resize', handleResizeOrOrientationChange);
+      window.removeEventListener('orientationchange', handleResizeOrOrientationChange);
     };
   }, []);
 
