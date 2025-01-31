@@ -64,7 +64,8 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
     // Utility to check if two rectangles overlap
     const doesOverlap = useCallback((id, customPos1, customHeight) => {
-        if (rectangles[id - 1].x !== centerSectionRef.current.style.x - (RECTANGLE_SIZES[rectangles[id - 1].size] / 2)) return false;
+        const otherRect = rectangles.find(r => r.id === id);
+        if (!otherRect || otherRect.x !== centerSectionRef.current.style.x - (RECTANGLE_SIZES[otherRect.size] / 2)) return false;
 
         const thereshold = 5;
         const pos1 = customPos1 !== undefined ? customPos1 : rectangleState.absolutePosition.y;
@@ -73,7 +74,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         const top1 = pos1 + thereshold;
         const bot1 = top1 + hei - thereshold;
 
-        const otherRect = rectangles[id - 1];
         const top2 = otherRect.y + thereshold;
         const bot2 = top2 + otherRect.height - thereshold;
 
@@ -180,8 +180,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 var canResize = true;
 
                 if (rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 && !isNote) {
-                    for (let i = 1; i < rectangles.length + 1; i++) {
-                        if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
+                    for (let i = 0; i < rectangles.length; i++) {
+                        const otherRect = rectangles[i];
+                        if (otherRect.id !== rect.id && doesOverlap(otherRect.id, undefined, newHeight)) {
                             canResize = false;
                             break;
                         }
@@ -234,8 +235,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 var overlapping = false;
 
                 if (showGhost) {
-                    for (let i = 1; i < rectangles.length + 1; i++) {
-                        if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
+                    for (let i = 0; i < rectangles.length; i++) {
+                        const otherRect = rectangles[i];
+                        if (otherRect.id !== rect.id && doesOverlap(otherRect.id, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
                             overlapping = true;
                             break;
                         }
