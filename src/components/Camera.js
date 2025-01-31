@@ -118,17 +118,6 @@ export function Camera(getClientXY, locked) {
         }));
     }, [getClientXY]);
 
-    // Handle mouse/touch up to stop dragging the camera
-    const handleMouseUpCamera = useCallback(() => {
-        setIsCameraDragging(false);
-        document.body.style.cursor = 'default';
-        setPositionState((prev) => ({
-            ...prev,
-            offset: { x: 0, y: 0 },
-        }));
-        centerCamera();
-    }, [centerCamera]);
-
     // Handle zooming
     const handleZoom = useCallback((delta) => {
         setZoom((prevZoom) => prevZoom + delta);
@@ -169,7 +158,7 @@ export function Camera(getClientXY, locked) {
 
     // Handle touch end to stop pinch to zoom
     const handleTouchEnd = useCallback(() => {
-        if (!isCameraDragging) return;
+        setIsCameraDragging(false);
         setTouchStartDistance(null);
         setTouchMidpoint(null);
         setRefresh((prev) => !prev);
@@ -182,7 +171,9 @@ export function Camera(getClientXY, locked) {
             }
             return prevZoom;
         });
-    }, [zoomLimits.max, zoomLimits.min, isCameraDragging]);
+
+        centerCamera();
+    }, [zoomLimits.max, zoomLimits.min, centerCamera]);
 
     // Handle zooming with ctrl button
     useEffect(() => {
@@ -237,7 +228,7 @@ export function Camera(getClientXY, locked) {
         centerSectionRef,
         handleMouseMoveCamera,
         handleMouseDownCamera,
-        handleMouseUpCamera,
+        handleTouchEnd,
         cameraProps,
         zoomProps,
         zoom,

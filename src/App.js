@@ -31,7 +31,7 @@ function App() {
     centerSectionRef,
     handleMouseMoveCamera,
     handleMouseDownCamera,
-    handleMouseUpCamera,
+    handleTouchEnd,
     cameraProps,
     zoomProps,
     zoom,
@@ -107,7 +107,7 @@ function App() {
       window.removeEventListener('touchmove', handleMoveWrapper);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom, positionState, setPositionState, getClientXY]);
+  }, [zoom, positionState, isCameraDragging, activeRectangle, setPositionState, getClientXY]);
 
   // Handle touch/mouse down to start dragging
   useEffect(() => {
@@ -143,7 +143,7 @@ function App() {
         setActiveRectangle(null);
         setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: false })));
 
-        if (!UI) handleMouseDownCamera(event);
+        if (!UI && !isOpen) handleMouseDownCamera(event);
       }
     };
 
@@ -163,16 +163,14 @@ function App() {
       event.preventDefault();
       event.stopPropagation();
 
-      if (activeRectangle !== null) {
-        setRectangles(prevRectangles =>
-          prevRectangles.map(rect =>
-            rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
-          )
-        );
-        setActiveRectangle(null);
-      } else if (isCameraDragging) {
-        handleMouseUpCamera(setPositionState);
-      }
+      setRectangles(prevRectangles =>
+        prevRectangles.map(rect =>
+          rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
+        )
+      );
+
+      setActiveRectangle(null);
+      handleTouchEnd();
     };
 
     window.addEventListener('touchend', handleUp, { passive: false });
@@ -186,7 +184,7 @@ function App() {
       window.removeEventListener('touchcancel', handleUp);
       window.removeEventListener('mouseleave', handleUp);
     };
-  }, [activeRectangle, rectangles, isCameraDragging, handleMouseUpCamera, positionState, setPositionState, setActiveRectangle, setRectangles]);
+  }, [activeRectangle, rectangles, isCameraDragging, positionState, setPositionState, setActiveRectangle, setRectangles, handleTouchEnd]);
 
   // Calculate the height of the center section based on the date range
   useEffect(() => {
