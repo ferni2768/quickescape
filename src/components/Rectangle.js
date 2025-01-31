@@ -27,7 +27,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             duration: 400,
             easing: easings.easeOutQuad
         },
-    })
+    });
     const xOffset = xOffsetSpring.xOffset;
     const [overTrashcanProps, setOverTrashcanProps] = useSpring(() => ({
         scale: 1,
@@ -43,7 +43,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [editDistance, setEditDistance] = useState(0);
     const textareaRef = useRef(null);
 
-    // Animation paremeters for rectangle position and size
+    // Animation parameters for rectangle position and size
     const mass = 0.3 * (1 + zoom / 2) + (rectangleState.height * rectangleWidth) / 10;
     const rectangleProps = useSpring({
         x: rectangleState.absolutePosition.x,
@@ -67,18 +67,23 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         const otherRect = rectangles.find(r => r.id === id);
         if (!otherRect || otherRect.x !== centerSectionRef.current.style.x - (RECTANGLE_SIZES[otherRect.size] / 2)) return false;
 
-        const thereshold = 5;
+        const threshold = 5;
         const pos1 = customPos1 !== undefined ? customPos1 : rectangleState.absolutePosition.y;
         const hei = customHeight !== undefined ? customHeight : rectangleState.height;
 
-        const top1 = pos1 + thereshold;
-        const bot1 = top1 + hei - thereshold;
+        // Calculate clamped ghost position for comparison
+        const snappedY = Math.round(pos1 / gridSize) * gridSize;
+        const maxY = centerSectionRef.current.offsetHeight - hei;
+        const ghostY = Math.min(maxY, Math.max(0, snappedY));
 
-        const top2 = otherRect.y + thereshold;
-        const bot2 = top2 + otherRect.height - thereshold;
+        const top1 = ghostY + threshold;
+        const bot1 = top1 + hei - threshold;
+
+        const top2 = otherRect.y + threshold;
+        const bot2 = top2 + otherRect.height - threshold;
 
         return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
-    }, [rectangleState.absolutePosition, rectangleState.height, rectangles, centerSectionRef]);
+    }, [rectangleState.absolutePosition, rectangleState.height, rectangles, centerSectionRef, gridSize]);
 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
@@ -176,7 +181,10 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
             } else {
                 const newY = clientY - positionState.offset.y;
-                const newHeight = Math.max(gridSize * 2, Math.min(gridSize * 48, Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize));
+                const newHeight = Math.max(gridSize * 2, Math.min(
+                    centerSectionRef.current.offsetHeight - rectangleState.absolutePosition.y,
+                    Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize
+                ));
                 var canResize = true;
 
                 if (rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 && !isNote) {
@@ -191,7 +199,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id]);
+    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
@@ -358,6 +366,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Function to render the rectangle
     const renderRectangle = (isVisible) => {
         const isSmallRectangle = rectangleState.height < gridSize * 4;
+        const snappedY = Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize;
+        const maxY = centerSectionRef.current.offsetHeight - rectangleState.height;
+        const ghostY = Math.min(maxY, Math.max(0, snappedY));
 
         return (
             <animated.div
@@ -386,7 +397,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                                     {icon}
                                     <div className='rectangle-header-text'>
                                         {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
-                                            `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}-${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize + rectangleState.height))}` :
+                                            `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
                                             (rectangleState.absolutePosition.x === centerSectionRef.current.style.x ?
                                                 `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
                                                 `${calculateDuration(rectangleState.height)}h`)}
@@ -397,7 +408,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                                     <div className='rectangle-icon-small'>{icon}</div>
                                     <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
                                         {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
-                                            `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}` :
+                                            `${formatTime(gridPositionToTime(ghostY))}` :
                                             `${calculateDuration(rectangleState.height)}h`}
                                     </div>
                                 </div>
@@ -431,8 +442,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                         strokeLinecap="round"
                     />
                 </svg>
-
-
             </animated.div>
         );
     };
