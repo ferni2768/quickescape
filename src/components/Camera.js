@@ -89,20 +89,23 @@ export function Camera(getClientXY, locked) {
         if (event.touches && event.touches.length > 1) return;
         const { clientX, clientY } = getClientXY(event);
         if (isCameraDragging) {
-            const newMousePosition = { x: clientX, y: clientY };
+            const newCameraX = viewportState.cameraPosition.x - (clientX - positionState.offset.x) / zoom;
+            const newCameraY = viewportState.cameraPosition.y - (clientY - positionState.offset.y) / zoom;
+
             setViewportState((prev) => ({
                 ...prev,
                 cameraPosition: {
-                    x: prev.cameraPosition.x - (newMousePosition.x - positionState.offset.x) / zoom,
-                    y: prev.cameraPosition.y - (newMousePosition.y - positionState.offset.y) / zoom,
+                    x: newCameraX,
+                    y: newCameraY,
                 },
             }));
+
             setPositionState((prev) => ({
                 ...prev,
-                offset: { x: newMousePosition.x, y: newMousePosition.y },
+                offset: { x: clientX, y: clientY },
             }));
         }
-    }, [isCameraDragging, getClientXY, positionState.offset.x, positionState.offset.y, zoom]);
+    }, [isCameraDragging, getClientXY, positionState.offset.x, positionState.offset.y, zoom, viewportState.cameraPosition]);
 
     // Handle mouse/touch down to start dragging the camera
     const handleMouseDownCamera = useCallback((event) => {
@@ -116,13 +119,12 @@ export function Camera(getClientXY, locked) {
     }, [getClientXY]);
 
     // Handle mouse/touch up to stop dragging the camera
-    const handleMouseUpCamera = useCallback((setPositionState) => {
+    const handleMouseUpCamera = useCallback(() => {
         setIsCameraDragging(false);
         document.body.style.cursor = 'default';
-        setPositionState(prev => ({
+        setPositionState((prev) => ({
             ...prev,
-            mousePosition: { x: 0, y: 0 },
-            offset: { x: 0, y: 0 }
+            offset: { x: 0, y: 0 },
         }));
         centerCamera();
     }, [centerCamera]);
