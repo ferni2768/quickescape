@@ -1,9 +1,9 @@
-import React, { useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { Delete, DeleteOutline } from '@mui/icons-material';
 
 const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     const trashcanRef = useRef(null);
-    const deleting = useRef(false);
+    const [deleting, setDeleting] = useState(false);
 
     // Memoize SVG icons
     const deleteIcon = useMemo(() => <Delete style={{ pointerEvents: 'none' }} />, []);
@@ -17,7 +17,7 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     // Handle hover leave
     const handleLeave = useCallback(() => {
         setOverTrashcanId(null);
-        deleting.current = false;
+        setDeleting(false);
         if (trashcanRef.current) {
             trashcanRef.current.classList.remove('deleting');
         }
@@ -47,7 +47,7 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     useEffect(() => {
         if (trashcanRef.current) {
             const observer = new MutationObserver(() => {
-                deleting.current = trashcanRef.current.classList.contains('deleting');
+                setDeleting(trashcanRef.current.classList.contains('deleting'));
             });
             observer.observe(trashcanRef.current, {
                 attributes: true,
@@ -76,7 +76,7 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
             onTouchEnd={handleLeave}
             onTouchCancel={handleLeave}
         >
-            {deleting.current ? deleteOutlineIcon : deleteIcon}
+            {deleting ? deleteOutlineIcon : deleteIcon}
         </div>
     );
 });

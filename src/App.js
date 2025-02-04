@@ -160,7 +160,7 @@ function App() {
 
       if (!UI && !isOpen) handleMouseDownCamera(event);
     }
-  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY]);
+  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition]);
 
   useEffect(() => {
     window.addEventListener('touchstart', handleDown, { passive: false });
@@ -218,7 +218,6 @@ function App() {
     locked,
     setLocked,
     activeRectangle,
-    overTrashcanId,
     setOverTrashcanId,
     startDate: dateRange.start,
     endDate: dateRange.end,

@@ -404,18 +404,16 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                                 <>
                                     {icon}
                                     <div className='rectangle-header-text'>
-                                        {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
+                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
                                             `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
-                                            (rectangleState.absolutePosition.x === centerSectionRef.current.style.x ?
-                                                `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
-                                                `${calculateDuration(rectangleState.height)}h`)}
+                                            `${calculateDuration(rectangleState.height)}h`}
                                     </div>
                                 </>
                             ) : (
                                 <div style={{ flexDirection: "column" }}>
                                     <div className='rectangle-icon-small'>{icon}</div>
                                     <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
-                                        {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
+                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
                                             `${formatTime(gridPositionToTime(ghostY))}` :
                                             `${calculateDuration(rectangleState.height)}h`}
                                     </div>
