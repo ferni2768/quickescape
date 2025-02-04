@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
 import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
+import NoteButton from './UI_buttons/NoteButton';
 import { Home, Star, Favorite, Lock, LockOpen, Visibility, VisibilityOff } from '@mui/icons-material';
 import './styles/Buttons.css';
 
-const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startDate, endDate, setStartDate, setEndDate,
-    isOpen, setIsOpen, setIsOverTrashcan }) => {
+const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startDate, endDate, setStartDate, setEndDate,
+    isOpen, setIsOpen, activeRectangle, setOverTrashcanId }) => {
 
     const [activeGroup, setActiveGroup] = useState(1);
     const [visible, setVisible] = useState(true);
@@ -16,26 +17,31 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
     const [isLockTouched, setIsLockTouched] = useState(false);
     const [isViewTouched, setIsViewTouched] = useState(false);
 
-    const handleLockTouchStart = () => {
-        setIsLockTouched(true);
-    };
+    // Memoize SVG icons
+    const lockIcon = useMemo(() => locked ? <Lock style={{ pointerEvents: 'none' }} /> : <LockOpen style={{ pointerEvents: 'none' }} />, [locked]);
+    const visibilityIcon = useMemo(() => visible ? <Visibility style={{ pointerEvents: 'none' }} /> : <VisibilityOff style={{ pointerEvents: 'none' }} />, [visible]);
 
-    const handleLockTouchEnd = () => {
+    // Memoize event handlers
+    const handleLockTouchStart = useCallback(() => {
+        setIsLockTouched(true);
+    }, []);
+
+    const handleLockTouchEnd = useCallback(() => {
         setIsLockTouched(false);
         setLocked(!locked);
-    };
+    }, [locked, setLocked]);
 
-    const handleViewTouchStart = () => {
+    const handleViewTouchStart = useCallback(() => {
         setIsViewTouched(true);
-    };
+    }, []);
 
-    const handleViewTouchEnd = () => {
+    const handleViewTouchEnd = useCallback(() => {
         setIsViewTouched(false);
         setVisible(!visible);
-    };
+    }, [visible]);
 
-
-    const buttonGroups = {
+    // Memoize buttonGroups
+    const buttonGroups = useMemo(() => ({
         1: [
             { id: 1, text: '1', color: '#4CAF50', size: 1, icon: <Home />, group: 1 },
             { id: 2, text: '2', color: '#2196F3', size: 2, icon: <Star />, group: 1 },
@@ -53,7 +59,8 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
             { id: 10, text: '10', color: '#FFEB3B', size: 2, icon: <Star />, group: 3 },
             { id: 11, text: '11', color: '#FF9800', size: 1, icon: <Favorite />, group: 3 },
         ],
-    };
+    }), []);
+
 
     return (
         <div>
@@ -87,17 +94,10 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
                     </div>
 
                     <div className="UI note-button">
-                        <Button
-                            key={0}
-                            id={0}
-                            text={'Note'}
-                            color={'#DAA520'}
-                            size={1}
+                        <NoteButton
                             createRectangle={createRectangle}
                             zoom={zoom}
                             mouseFollowerRef={mouseFollowerRef}
-                            icon={<Home />}
-                            group={0}
                         />
                     </div>
 
@@ -121,7 +121,7 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
                     onTouchStart={handleLockTouchStart}
                     onTouchEnd={handleLockTouchEnd}
                 >
-                    {locked ? <Lock style={{ pointerEvents: 'none' }} /> : <LockOpen style={{ pointerEvents: 'none' }} />}
+                    {lockIcon}
                 </button>
 
                 <button
@@ -130,15 +130,36 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
                     onTouchStart={handleViewTouchStart}
                     onTouchEnd={handleViewTouchEnd}
                 >
-                    {visible ? <Visibility style={{ pointerEvents: 'none' }} /> : <VisibilityOff style={{ pointerEvents: 'none' }} />}
+                    {visibilityIcon}
                 </button>
             </div>
 
             <div className="UI bottom-right-container">
-                <Trashcan className="UI trashcan" setIsOverTrashcan={setIsOverTrashcan} />
+                <Trashcan className="UI trashcan" activeRectangle={activeRectangle} setOverTrashcanId={setOverTrashcanId} />
             </div>
         </div>
     );
+});
+
+const areEqual = (prevProps, nextProps) => {
+    const isStartDateEqual = prevProps.startDate?.getTime() === nextProps.startDate?.getTime();
+    const isEndDateEqual = prevProps.endDate?.getTime() === nextProps.endDate?.getTime();
+
+    return (
+        prevProps.createRectangle === nextProps.createRectangle &&
+        prevProps.zoom === nextProps.zoom &&
+        prevProps.mouseFollowerRef === nextProps.mouseFollowerRef &&
+        prevProps.locked === nextProps.locked &&
+        prevProps.setLocked === nextProps.setLocked &&
+        isStartDateEqual &&
+        isEndDateEqual &&
+        prevProps.setStartDate === nextProps.setStartDate &&
+        prevProps.setEndDate === nextProps.setEndDate &&
+        prevProps.isOpen === nextProps.isOpen &&
+        prevProps.setIsOpen === nextProps.setIsOpen &&
+        prevProps.activeRectangle === nextProps.activeRectangle &&
+        prevProps.setOverTrashcanId === nextProps.setOverTrashcanId
+    );
 };
 
-export default UI;
+export default React.memo(UI, areEqual);

@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
-const SwitchButton = ({ group, activeGroup, setActiveGroup }) => {
+const SwitchButton = React.memo(({ group, activeGroup, setActiveGroup }) => {
     const [isTouched, setIsTouched] = useState(false);
 
-    const handleSwitch = () => {
+    // Memoize event handlers
+    const handleSwitch = useCallback(() => {
         setActiveGroup(group);
-    };
+    }, [group, setActiveGroup]);
 
-    const handleTouchStart = () => {
+    const handleTouchStart = useCallback(() => {
         setIsTouched(true);
-    };
+    }, []);
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = useCallback(() => {
         setIsTouched(false);
         handleSwitch();
-    };
+    }, [handleSwitch]);
+
 
     return (
         <button
@@ -26,6 +28,15 @@ const SwitchButton = ({ group, activeGroup, setActiveGroup }) => {
             {group}
         </button>
     );
+});
+
+// Only re-render if the props change
+const areEqual = (prevProps, nextProps) => {
+    return (
+        prevProps.group === nextProps.group &&
+        prevProps.activeGroup === nextProps.activeGroup &&
+        prevProps.setActiveGroup === nextProps.setActiveGroup
+    );
 };
 
-export default SwitchButton;
+export default React.memo(SwitchButton, areEqual);

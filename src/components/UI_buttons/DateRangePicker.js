@@ -1,25 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import DatePicker from 'react-datepicker';
 import dayjs from 'dayjs';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/DatePicker.css';
 
-const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen, twoLines }) => {
+const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen, twoLines }) => {
     const [animationClass, setAnimationClass] = useState('fadeIn');
     const [tempStartDate, setTempStartDate] = useState(startDate);
     const [tempEndDate, setTempEndDate] = useState(endDate);
     const datePickerRef = useRef(null);
 
-    // Set min and max dates
-    const minDate = dayjs().toDate();
-    const maxDate = startDate ? dayjs(startDate).add(1, 'month').toDate() : null;
+    useEffect(() => {
+        setTempStartDate(startDate);
+        setTempEndDate(endDate);
+    }, [startDate, endDate]);
 
-    const clickIn = () => {
+    const minDate = useMemo(() => dayjs().toDate(), []);
+    const maxDate = useMemo(() => (startDate ? dayjs(startDate).add(1, 'month').toDate() : null), [startDate]);
+
+    // Memoize event handlers
+    const clickIn = useCallback(() => {
         setAnimationClass('fadeIn');
         setIsOpen(true);
-    };
+    }, [setIsOpen]);
 
-    const clickOut = () => {
+    // Handle click outside the date picker
+    const clickOut = useCallback(() => {
         setAnimationClass('fadeOut');
         setTimeout(() => {
             if (tempStartDate !== null && tempEndDate !== null) {
@@ -31,10 +37,17 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
             }
             setIsOpen(false);
         }, 200);
-    };
+    }, [tempStartDate, tempEndDate, setStartDate, setEndDate, startDate, endDate, setIsOpen]);
+
+    // Handle date change
+    const handleDateChange = useCallback((dates) => {
+        const [start, end] = dates;
+        setTempStartDate(start);
+        setTempEndDate(end);
+    }, []);
 
     // Simulate click on touch devices
-    const handleTouchToClick = (e) => {
+    const handleTouchToClick = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -53,8 +66,9 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
         // Close the date picker if touch is outside the picker
         if (datePickerRef.current && !datePickerRef.current.contains(touchedElement))
             clickOut();
-    };
+    }, [clickOut]);
 
+    // Add event listener for touchstart
     useEffect(() => {
         if (isOpen) window.addEventListener('touchstart', handleTouchToClick, { passive: false });
         else window.removeEventListener('touchstart', handleTouchToClick);
@@ -62,14 +76,7 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
         return () => {
             window.removeEventListener('touchstart', handleTouchToClick);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, tempStartDate, tempEndDate, startDate, endDate]);
-
-    const handleDateChange = (dates) => {
-        const [start, end] = dates;
-        setTempStartDate(start);
-        setTempEndDate(end);
-    };
+    }, [isOpen, handleTouchToClick]);
 
 
     return (
@@ -101,6 +108,6 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
             </div>
         </div>
     );
-};
+});
 
 export default DateRangePicker;

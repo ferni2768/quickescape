@@ -1,37 +1,31 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo } from 'react';
 import { Delete, DeleteOutline } from '@mui/icons-material';
 
-const Trashcan = ({ setIsOverTrashcan }) => {
+const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     const trashcanRef = useRef(null);
     const deleting = useRef(false);
 
-    useEffect(() => {
-        if (trashcanRef.current) {
-            const handleClassChange = () => {
-                deleting.current = trashcanRef.current.classList.contains('deleting');
-            };
+    // Memoize SVG icons
+    const deleteIcon = useMemo(() => <Delete style={{ pointerEvents: 'none' }} />, []);
+    const deleteOutlineIcon = useMemo(() => <DeleteOutline style={{ pointerEvents: 'none' }} />, []);
 
-            const observer = new MutationObserver(handleClassChange);
-            observer.observe(trashcanRef.current, { attributes: true, attributeFilter: ['class'] });
+    // Handle hover enter
+    const handleEnter = useCallback(() => {
+        if (activeRectangle !== null) setOverTrashcanId(activeRectangle);
+    }, [activeRectangle, setOverTrashcanId]);
 
-            return () => {
-                observer.disconnect();
-            };
-        }
-    }, []);
-
-    const handleEnter = () => {
-        setIsOverTrashcan(true);
-    };
-
-    const handleLeave = () => {
-        setIsOverTrashcan(false);
+    // Handle hover leave
+    const handleLeave = useCallback(() => {
+        setOverTrashcanId(null);
         deleting.current = false;
-        trashcanRef.current.classList.remove('deleting');
-    };
-
-    const handleTouchMove = (event) => {
         if (trashcanRef.current) {
+            trashcanRef.current.classList.remove('deleting');
+        }
+    }, [setOverTrashcanId]);
+
+    // Handle touch movement detection
+    const handleTouchMove = useCallback((event) => {
+        if (trashcanRef.current && activeRectangle !== null) {
             const touch = event.touches[0];
             const trashcanRect = trashcanRef.current.getBoundingClientRect();
             const isOver = (
@@ -40,21 +34,36 @@ const Trashcan = ({ setIsOverTrashcan }) => {
                 touch.clientY >= trashcanRect.top &&
                 touch.clientY <= trashcanRect.bottom
             );
-            setIsOverTrashcan(isOver);
 
-            if (!isOver) {
+            if (isOver) {
+                setOverTrashcanId(activeRectangle);
+            } else {
                 handleLeave();
             }
         }
-    };
+    }, [activeRectangle, setOverTrashcanId, handleLeave]);
 
+    // Track class changes for deletion animation
+    useEffect(() => {
+        if (trashcanRef.current) {
+            const observer = new MutationObserver(() => {
+                deleting.current = trashcanRef.current.classList.contains('deleting');
+            });
+            observer.observe(trashcanRef.current, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+            return () => observer.disconnect();
+        }
+    }, []);
+
+    // Add touchmove listener
     useEffect(() => {
         window.addEventListener('touchmove', handleTouchMove, { passive: false });
         return () => {
             window.removeEventListener('touchmove', handleTouchMove);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [handleTouchMove]);
 
 
     return (
@@ -67,9 +76,9 @@ const Trashcan = ({ setIsOverTrashcan }) => {
             onTouchEnd={handleLeave}
             onTouchCancel={handleLeave}
         >
-            {deleting.current ? <DeleteOutline style={{ pointerEvents: 'none' }} /> : <Delete style={{ pointerEvents: 'none' }} />}
+            {deleting.current ? deleteOutlineIcon : deleteIcon}
         </div>
     );
-};
+});
 
 export default Trashcan;

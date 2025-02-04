@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef, icon, group, activeGroup }) => {
+const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouseFollowerRef, icon, group, activeGroup }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
     const buttonRef = useRef(null);
@@ -50,6 +50,7 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
         if (isDragging) resetButtonPosition();
     }, [isDragging]);
 
+    // Animate the button when the active group changes
     useEffect(() => {
         if (startRef.current < 2) {
             startRef.current++;
@@ -70,6 +71,7 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
         }
     }, [activeGroup, group]);
 
+    // Add event listeners for mouse and touch events
     useEffect(() => {
         const moveListener = (e) => handleMouseMove(e);
         const upListener = () => handleMouseUp();
@@ -117,6 +119,19 @@ const Button = ({ id, text, color, size, createRectangle, zoom, mouseFollowerRef
             <div style={{ pointerEvents: 'none' }}>{icon}</div>
         </button>
     );
+});
+
+// Only re-render if the props change
+const areEqual = (prevProps, nextProps) => {
+    return (
+        prevProps.id === nextProps.id &&
+        prevProps.text === nextProps.text &&
+        prevProps.color === nextProps.color &&
+        prevProps.size === nextProps.size &&
+        prevProps.zoom === nextProps.zoom &&
+        prevProps.group === nextProps.group &&
+        prevProps.activeGroup === nextProps.activeGroup
+    );
 };
 
-export default Button;
+export default React.memo(Button, areEqual);

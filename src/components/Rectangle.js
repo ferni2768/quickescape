@@ -88,11 +88,16 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
         setRectangles((prevRectangles) =>
-            prevRectangles.map((r) =>
-                r.id === rect.id ? { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height } : r
-            )
+            prevRectangles.map((r) => {
+                if (r.id === rect.id) {
+                    // Only update if one of the values has changed
+                    if (r.x !== rectangleState.absolutePosition.x || r.y !== rectangleState.absolutePosition.y || r.height !== rectangleState.height)
+                        return { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height };
+                }
+                return r;
+            })
         );
-    }, [rectangleState, rect.id, setRectangles]);
+    }, [rectangleState.absolutePosition.x, rectangleState.absolutePosition.y, rectangleState.height, rect.id, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -154,7 +159,10 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
             const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
             const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
-            setEditDistance(Math.sqrt(dx * dx + dy * dy) / 10);
+
+            const newDistance = Math.sqrt(dx * dx + dy * dy) / 10;
+            if (Math.abs(newDistance - editDistance) > 0.1)
+                setEditDistance(newDistance);
 
             if (!isResizing) {
                 const newMousePosition = { x: clientX, y: clientY };
@@ -199,7 +207,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
+    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, editDistance, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
@@ -433,13 +441,15 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
                 )}
                 {/* Add the resize hint */}
-                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30">
+                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30"
+                    style={{ pointerEvents: 'none' }}>
                     <path
                         d="M 28 0 V 20 C 28 24 24 28 20 28 L 0 28"
                         fill="none"
                         stroke="white"
                         strokeWidth="4"
                         strokeLinecap="round"
+                        style={{ pointerEvents: 'none' }}
                     />
                 </svg>
             </animated.div>
@@ -468,4 +478,20 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     );
 });
 
-export default Rectangle;
+// Only re-render if the props change
+const areEqual = (prevProps, nextProps) => {
+    return (
+        prevProps.rect.id === nextProps.rect.id &&
+        prevProps.rect.x === nextProps.rect.x &&
+        prevProps.rect.y === nextProps.rect.y &&
+        prevProps.rect.height === nextProps.rect.height &&
+        prevProps.isDragging === nextProps.isDragging &&
+        prevProps.isOverTrashcan === nextProps.isOverTrashcan &&
+        prevProps.color === nextProps.color &&
+        prevProps.size === nextProps.size &&
+        prevProps.icon === nextProps.icon &&
+        prevProps.isNote === nextProps.isNote
+    );
+};
+
+export default React.memo(Rectangle, areEqual);
