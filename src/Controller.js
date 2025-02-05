@@ -1,12 +1,14 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export const RECTANGLE_SIZES = { 1: 150, 2: 300 };
 
 export const useController = () => {
     const [rectangles, setRectangles] = useState([]);
+    const rectanglesRef = useRef(rectangles);
     const [activeRectangle, setActiveRectangle] = useState(null);
     const [adjustedMousePosition, setAdjustedMousePosition] = useState({ x: 0, y: 0 });
     const gridSize = 20;
+    const maxRectangles = 150;
 
     // Unique ID counter for rectangles
     const idCounter = useRef(0);
@@ -19,8 +21,14 @@ export const useController = () => {
         return { clientX: event.clientX, clientY: event.clientY };
     }, []);
 
+    // Track the rectangles array
+    useEffect(() => {
+        rectanglesRef.current = rectangles;
+    }, [rectangles]);
+
     // Memoized function to create a new rectangle
     const createRectangle = useCallback((x, y, height, color, size, icon, group) => {
+        if (rectanglesRef.current.length >= maxRectangles) return;
         const newRectangle = {
             id: idCounter.current++,
             x,
