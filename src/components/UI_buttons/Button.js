@@ -26,6 +26,7 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
     };
 
     const handleMouseMove = useCallback((e) => {
+        if (e.touches && e.touches.length > 1) { handleMouseUp(); return; }
         if (!isDragging || hasExecutedRef.current) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const distanceMoved = clientX - startX;

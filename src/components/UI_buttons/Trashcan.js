@@ -10,7 +10,8 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     const deleteOutlineIcon = useMemo(() => <DeleteOutline style={{ pointerEvents: 'none' }} />, []);
 
     // Handle hover enter
-    const handleEnter = useCallback(() => {
+    const handleEnter = useCallback((e) => {
+        if (e.touches && e.touches.length > 1) return;
         if (activeRectangle !== null) setOverTrashcanId(activeRectangle);
     }, [activeRectangle, setOverTrashcanId]);
 

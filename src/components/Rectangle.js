@@ -24,7 +24,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         from: { xOffset: (viewportState.windowSize.width) / zoom },
         to: { xOffset: 0 },
         config: {
-            duration: 400,
+            duration: 300,
             easing: easings.easeOutQuad
         },
     });
@@ -390,6 +390,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                         return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${overTrashcanProps.scale.get()})`;
                     }),
                     height: rectangleProps.height,
+                    pointerEvents: 'all',
                     position: 'absolute',
                     backgroundColor: overTrashcanProps.backgroundColor,
                     zIndex: isNote ? '99' : (isDragging ? '100' : '10'),

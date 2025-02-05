@@ -225,7 +225,7 @@ function App() {
     setEndDate,
     isOpen,
     setIsOpen
-  }), [createRectangle, zoom, locked, isOpen, dateRange.start, dateRange.end, activeRectangle, overTrashcanId, setStartDate, setEndDate, setLocked, setOverTrashcanId]);
+  }), [createRectangle, zoom, locked, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setOverTrashcanId]);
 
 
   return (
@@ -237,6 +237,7 @@ function App() {
         style={{
           transform: zoomProps.zoom.to((z) => `scale(${z})`),
           position: 'relative',
+          pointerEvents: 'none',
         }}
       >
         <animated.div
@@ -244,6 +245,7 @@ function App() {
           style={{
             transform: cameraProps.x.to((x, y) => `translate(${-x}px, ${-cameraProps.y.get()}px)`),
             position: 'relative',
+            pointerEvents: 'none',
           }}
         >
           <DateLabels startDate={dateRange.start} endDate={dateRange.end} gridSize={gridSize} />
