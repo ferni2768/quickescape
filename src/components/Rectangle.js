@@ -20,14 +20,15 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [showGhost, setShowGhost] = useState(false);
     const rectangleWidth = RECTANGLE_SIZES[size];
     const justCreated = useRef(true);
+    const dragged = useRef(false);
     const xOffsetSpring = useSpring({
         from: { xOffset: (viewportState.windowSize.width) / zoom },
         to: { xOffset: 0 },
         config: {
-            duration: 400,
+            duration: 300,
             easing: easings.easeOutQuad
         },
-    })
+    });
     const xOffset = xOffsetSpring.xOffset;
     const [overTrashcanProps, setOverTrashcanProps] = useSpring(() => ({
         scale: 1,
@@ -43,7 +44,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [editDistance, setEditDistance] = useState(0);
     const textareaRef = useRef(null);
 
-    // Animation paremeters for rectangle position and size
+    // Animation parameters for rectangle position and size
     const mass = 0.3 * (1 + zoom / 2) + (rectangleState.height * rectangleWidth) / 10;
     const rectangleProps = useSpring({
         x: rectangleState.absolutePosition.x,
@@ -64,30 +65,41 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
     // Utility to check if two rectangles overlap
     const doesOverlap = useCallback((id, customPos1, customHeight) => {
-        if (rectangles[id - 1].x !== centerSectionRef.current.style.x - (RECTANGLE_SIZES[rectangles[id - 1].size] / 2)) return false;
+        const otherRect = rectangles.find(r => r.id === id);
+        if (!otherRect || otherRect.x !== centerSectionRef.current.style.x - (RECTANGLE_SIZES[otherRect.size] / 2)) return false;
 
-        const thereshold = 5;
+        const threshold = 5;
         const pos1 = customPos1 !== undefined ? customPos1 : rectangleState.absolutePosition.y;
         const hei = customHeight !== undefined ? customHeight : rectangleState.height;
 
-        const top1 = pos1 + thereshold;
-        const bot1 = top1 + hei - thereshold;
+        // Calculate clamped ghost position for comparison
+        const snappedY = Math.round(pos1 / gridSize) * gridSize;
+        const maxY = centerSectionRef.current.offsetHeight - hei;
+        const ghostY = Math.min(maxY, Math.max(0, snappedY));
 
-        const otherRect = rectangles[id - 1];
-        const top2 = otherRect.y + thereshold;
-        const bot2 = top2 + otherRect.height - thereshold;
+        const top1 = ghostY + threshold;
+        const bot1 = top1 + hei - threshold;
+
+        const top2 = otherRect.y + threshold;
+        const bot2 = top2 + otherRect.height - threshold;
 
         return (top1 < top2 && bot1 > top2) || (top1 >= top2 && top1 < bot2);
-    }, [rectangleState.absolutePosition, rectangleState.height, rectangles, centerSectionRef]);
+    }, [rectangleState.absolutePosition, rectangleState.height, rectangles, centerSectionRef, gridSize]);
 
     // Update rectangle data when dragging or resizing
     useEffect(() => {
         setRectangles((prevRectangles) =>
-            prevRectangles.map((r) =>
-                r.id === rect.id ? { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height } : r
-            )
+            prevRectangles.map((r) => {
+                if (r.id === rect.id) {
+                    // Only update if one of the values has changed
+                    if (r.x !== rectangleState.absolutePosition.x || r.y !== rectangleState.absolutePosition.y || r.height !== rectangleState.height)
+                        return { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height };
+                }
+                return r;
+            })
         );
-    }, [rectangleState, rect.id, setRectangles]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rectangleState.absolutePosition, rectangleState.height, rect.id, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -108,6 +120,8 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
         if (state === 0) {
             setState(1);
+            dragged.current = true;
+            if (isEditing) setIsEditing(false);
             event.stopPropagation();
 
             const { clientX, clientY } = getClientXY(event);
@@ -137,10 +151,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     },
                 }));
             }
-
-            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
-            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
-            setEditDistance(Math.sqrt(dx * dx + dy * dy));
         } else if (state === 1) {
 
             if (event.touches && event.touches.length > 1) {
@@ -149,6 +159,14 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             }
 
             const { clientX, clientY } = getClientXY(event);
+
+            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
+            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
+
+            const newDistance = Math.sqrt(dx * dx + dy * dy) / 10;
+            if (Math.abs(newDistance - editDistance) > 0.5)
+                setEditDistance(newDistance);
+
             if (!isResizing) {
                 const newMousePosition = { x: clientX, y: clientY };
                 setPositionState((prev) => ({
@@ -174,12 +192,16 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
             } else {
                 const newY = clientY - positionState.offset.y;
-                const newHeight = Math.max(gridSize * 2, Math.min(gridSize * 48, Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize));
+                const newHeight = Math.max(gridSize * 2, Math.min(
+                    centerSectionRef.current.offsetHeight - rectangleState.absolutePosition.y,
+                    Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize
+                ));
                 var canResize = true;
 
                 if (rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 && !isNote) {
-                    for (let i = 1; i < rectangles.length + 1; i++) {
-                        if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, undefined, newHeight)) {
+                    for (let i = 0; i < rectangles.length; i++) {
+                        const otherRect = rectangles[i];
+                        if (otherRect.id !== rect.id && doesOverlap(otherRect.id, undefined, newHeight)) {
                             canResize = false;
                             break;
                         }
@@ -188,16 +210,14 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id]);
+    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, editDistance, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
         if (isDragging && !isResizing && isOverTrashcan) {
-            setOverTrashcanProps({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
+            setOverTrashcanProps.start({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
         } else {
-            if (!rectangleState.deleting) {
-                setOverTrashcanProps({ scale: 1, opacity: 1, backgroundColor: color });
-            }
+            if (!rectangleState.deleting) setOverTrashcanProps.start({ scale: 1, opacity: 1, backgroundColor: color });
         }
     }, [isDragging, isResizing, isOverTrashcan, setOverTrashcanProps, rectangleState.deleting, color]);
 
@@ -206,44 +226,95 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         if (isDragging) {
             window.addEventListener('mousemove', handleMouseRectangle);
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
+
+            setStartTime(performance.now());
+            setEditDistance(0);
         } else {
+            if (dragged.current) {
+                if (!justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
+                    setIsEditing(true);
 
-            if (isOverTrashcan && !isResizing) {
-                const trashcan = document.querySelector('.trashcan');
-                trashcan.classList.remove('deleting');
-                setRectangleState((prev) => ({ ...prev, deleting: true }));
-                setOverTrashcanProps({ scale: 0.7, opacity: 0 });
+                setStartTime(null);
 
-                setTimeout(() => {
-                    setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
-                }, 200);
+                if (isOverTrashcan && !isResizing) {
+                    const trashcan = document.querySelector('.trashcan');
+                    trashcan.classList.remove('deleting');
+                    document.body.style.cursor = 'default';
+                    setRectangleState((prev) => ({ ...prev, deleting: true }));
+                    setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
 
-                return;
-            }
+                    setTimeout(() => {
+                        setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
+                    }, 200);
 
-            if (!isResizing && !isNote) {
-                var overlapping = false;
+                    return;
+                }
 
-                if (showGhost) {
-                    for (let i = 1; i < rectangles.length + 1; i++) {
-                        if ((rectangles[i - 1].id !== rect.id) && doesOverlap(i, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
-                            overlapping = true;
-                            break;
+                if (!isResizing && !isNote) {
+                    var overlapping = false;
+
+                    if (showGhost) {
+                        for (let i = 0; i < rectangles.length; i++) {
+                            const otherRect = rectangles[i];
+                            if (otherRect.id !== rect.id && doesOverlap(otherRect.id, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
+                                overlapping = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (showGhost && !overlapping) {
+                        const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
+                            Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
+                        setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
+                    } else if (showGhost && overlapping) {
+                        if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
+                        else {
+                            const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
+                            setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
                         }
                     }
                 }
+            } else {
+                setStartTime(null);
 
-                if (showGhost && !overlapping) {
-                    const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
-                        Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
-                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
-                } else if (showGhost && overlapping) {
-                    if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
-                    else {
-                        const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
-                        setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                const { offsetLeft, offsetTop } = mouseFollowerRef.current;
+                const newAbsolutePosition = {
+                    x: (offsetLeft - (rectangleWidth / 2) * zoom) / zoom,
+                    y: (offsetTop - (rectangleState.height / 2) * zoom) / zoom,
+                };
+                setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
+
+                setTimeout(() => {
+                    if (!isNote) {
+                        var overlapping = false;
+                        var ghost = false;
+
+                        const centerSectionStart = centerSectionRef.current.style.x - (rectangleWidth + 100);
+                        const centerSectionEnd = centerSectionRef.current.style.x + 100;
+                        if (!isResizing && rectangleState.absolutePosition.x > centerSectionStart && rectangleState.absolutePosition.x < centerSectionEnd
+                            && rectangleState.absolutePosition.y >= -gridSize * 7 && rectangleState.absolutePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - rectangleState.height + 7 * gridSize : 0)) {
+                            ghost = true;
+                        }
+                        if (ghost) {
+                            for (let i = 0; i < rectangles.length; i++) {
+                                const otherRect = rectangles[i];
+                                if (otherRect.id !== rect.id && doesOverlap(otherRect.id, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
+                                    overlapping = true;
+                                    break;
+                                }
+                            }
+                            if (!overlapping) {
+                                const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
+                                    Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
+                                setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
+                            } else {
+                                const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
+                                setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                            }
+                        }
                     }
-                }
+                }, 0);
             }
 
             setIsResizing(false);
@@ -259,7 +330,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             window.removeEventListener('touchmove', handleMouseRectangle);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isDragging, rectangleState.initialDragPosition, rect.id]);
+    }, [isDragging, rectangleState.initialDragPosition, rect.id, centerSectionRef]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {
@@ -287,12 +358,13 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Handle click outside to exit editing mode
     useEffect(() => {
         const handleClickOutside = (event) => {
+            event.preventDefault();
             if (isEditing && !event.target.closest(`.rectangle-${rect.id}`)) {
                 setIsEditing(false);
             }
         };
         window.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('touchstart', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside, { passive: false });
         return () => {
             window.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('touchstart', handleClickOutside);
@@ -346,6 +418,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Function to render the rectangle
     const renderRectangle = (isVisible) => {
         const isSmallRectangle = rectangleState.height < gridSize * 4;
+        const snappedY = Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize;
+        const maxY = centerSectionRef.current.offsetHeight - rectangleState.height;
+        const ghostY = Math.min(maxY, Math.max(0, snappedY));
 
         return (
             <animated.div
@@ -359,23 +434,12 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                         return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${overTrashcanProps.scale.get()})`;
                     }),
                     height: rectangleProps.height,
+                    pointerEvents: 'all',
                     position: 'absolute',
                     backgroundColor: overTrashcanProps.backgroundColor,
                     zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
                     visibility: isVisible ? 'visible' : 'hidden',
                     opacity: overTrashcanProps.opacity,
-                }}
-                onMouseDown={() => { setStartTime(performance.now()); setEditDistance(0); }}
-                onTouchStart={() => { setStartTime(performance.now()); setEditDistance(0); }}
-                onMouseUp={() => {
-                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
-                    setStartTime(null);
-                    setEditDistance(0);
-                }}
-                onTouchEnd={() => {
-                    if (performance.now() - startTime < 300 && editDistance <= 30 / zoom) setIsEditing(true);
-                    setStartTime(null);
-                    setEditDistance(0);
                 }}
             >
                 <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
@@ -385,19 +449,17 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                                 <>
                                     {icon}
                                     <div className='rectangle-header-text'>
-                                        {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
-                                            `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}-${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize + rectangleState.height))}` :
-                                            (rectangleState.absolutePosition.x === centerSectionRef.current.style.x ?
-                                                `${formatTime(gridPositionToTime(rectangleState.absolutePosition.y))}-${formatTime(gridPositionToTime(rectangleState.absolutePosition.y + rectangleState.height))}` :
-                                                `${calculateDuration(rectangleState.height)}h`)}
+                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
+                                            `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
+                                            `${calculateDuration(rectangleState.height)}h`}
                                     </div>
                                 </>
                             ) : (
                                 <div style={{ flexDirection: "column" }}>
                                     <div className='rectangle-icon-small'>{icon}</div>
                                     <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
-                                        {(showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) ?
-                                            `${formatTime(gridPositionToTime(Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize))}` :
+                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
+                                            `${formatTime(gridPositionToTime(ghostY))}` :
                                             `${calculateDuration(rectangleState.height)}h`}
                                     </div>
                                 </div>
@@ -422,17 +484,17 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
                 )}
                 {/* Add the resize hint */}
-                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30">
+                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30"
+                    style={{ pointerEvents: 'none' }}>
                     <path
                         d="M 28 0 V 20 C 28 24 24 28 20 28 L 0 28"
                         fill="none"
                         stroke="white"
                         strokeWidth="4"
                         strokeLinecap="round"
+                        style={{ pointerEvents: 'none' }}
                     />
                 </svg>
-
-
             </animated.div>
         );
     };
@@ -459,4 +521,20 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     );
 });
 
-export default Rectangle;
+// Only re-render if the props change
+const areEqual = (prevProps, nextProps) => {
+    return (
+        prevProps.rect.id === nextProps.rect.id &&
+        prevProps.rect.x === nextProps.rect.x &&
+        prevProps.rect.y === nextProps.rect.y &&
+        prevProps.rect.height === nextProps.rect.height &&
+        prevProps.isDragging === nextProps.isDragging &&
+        prevProps.isOverTrashcan === nextProps.isOverTrashcan &&
+        prevProps.color === nextProps.color &&
+        prevProps.size === nextProps.size &&
+        prevProps.icon === nextProps.icon &&
+        prevProps.isNote === nextProps.isNote
+    );
+};
+
+export default React.memo(Rectangle, areEqual);

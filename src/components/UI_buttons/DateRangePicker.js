@@ -1,21 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import DatePicker from 'react-datepicker';
 import dayjs from 'dayjs';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/DatePicker.css';
 
-const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen, twoLines }) => {
+const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, isOpen, setIsOpen, twoLines }) => {
     const [animationClass, setAnimationClass] = useState('fadeIn');
     const [tempStartDate, setTempStartDate] = useState(startDate);
     const [tempEndDate, setTempEndDate] = useState(endDate);
+    const datePickerRef = useRef(null);
 
-    const handleDateChange = (dates) => {
-        const [start, end] = dates;
-        setTempStartDate(start);
-        setTempEndDate(end);
-    };
+    useEffect(() => {
+        setTempStartDate(startDate);
+        setTempEndDate(endDate);
+    }, [startDate, endDate]);
 
-    const clickOut = () => {
+    const minDate = useMemo(() => dayjs().toDate(), []);
+    const maxDate = useMemo(() => (startDate ? dayjs(startDate).add(1, 'month').toDate() : null), [startDate]);
+
+    // Memoize event handlers
+    const clickIn = useCallback(() => {
+        setAnimationClass('fadeIn');
+        setIsOpen(true);
+    }, [setIsOpen]);
+
+    // Handle click outside the date picker
+    const clickOut = useCallback(() => {
         setAnimationClass('fadeOut');
         setTimeout(() => {
             if (tempStartDate !== null && tempEndDate !== null) {
@@ -27,23 +37,55 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
             }
             setIsOpen(false);
         }, 200);
-    };
+    }, [tempStartDate, tempEndDate, setStartDate, setEndDate, startDate, endDate, setIsOpen]);
 
-    const clickIn = () => {
-        setAnimationClass('fadeIn');
-        setIsOpen(true);
-    };
+    // Handle date change
+    const handleDateChange = useCallback((dates) => {
+        const [start, end] = dates;
+        setTempStartDate(start);
+        setTempEndDate(end);
+    }, []);
 
-    // Set min and max dates
-    const minDate = dayjs().toDate();
-    const maxDate = startDate ? dayjs(startDate).add(1, 'month').toDate() : null;
+    // Simulate click on touch devices
+    const handleTouchToClick = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const touch = e.touches[0];
+        const touchedElement = document.elementFromPoint(touch.clientX, touch.clientY);
+
+        touchedElement?.dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+            })
+        );
+
+        // Close the date picker if touch is outside the picker
+        if (datePickerRef.current && !datePickerRef.current.contains(touchedElement))
+            clickOut();
+    }, [clickOut]);
+
+    // Add event listener for touchstart
+    useEffect(() => {
+        if (isOpen) window.addEventListener('touchstart', handleTouchToClick, { passive: false });
+        else window.removeEventListener('touchstart', handleTouchToClick);
+
+        return () => {
+            window.removeEventListener('touchstart', handleTouchToClick);
+        };
+    }, [isOpen, handleTouchToClick]);
+
 
     return (
-        <div className={`UI date-range ${twoLines ? 'two-lines' : ''}`}>
+        <div className={`UI date-range ${twoLines ? 'two-lines' : ''}`} ref={datePickerRef}>
             <div
                 className={`UI date-range-label ${isOpen ? 'opened' : 'closed'}`}
                 style={{ position: 'absolute', top: 0, left: 0, color: 'black', cursor: 'pointer', width: '100%' }}
                 onClick={clickIn}
+                onTouchStart={clickIn}
             >
                 {`${startDate ? dayjs(startDate).format('DD MMM') : ''} - ${endDate ? dayjs(endDate).format('DD MMM') : ''}`}
             </div>
@@ -66,6 +108,6 @@ const DateRangePicker = ({ startDate, endDate, setStartDate, setEndDate, isOpen,
             </div>
         </div>
     );
-};
+});
 
 export default DateRangePicker;

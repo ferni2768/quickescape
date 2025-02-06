@@ -1,20 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
 import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
+import NoteButton from './UI_buttons/NoteButton';
 import { Home, Star, Favorite, Lock, LockOpen, Visibility, VisibilityOff } from '@mui/icons-material';
 import './styles/Buttons.css';
 
-const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startDate, endDate, setStartDate, setEndDate,
-    isOpen, setIsOpen, setIsOverTrashcan }) => {
+const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startDate, endDate, setStartDate, setEndDate,
+    isOpen, setIsOpen, activeRectangle, setOverTrashcanId }) => {
 
     const [activeGroup, setActiveGroup] = useState(1);
-    const [visible, setVisible] = useState(true); // State for visibility
+    const [visible, setVisible] = useState(true);
     const [twoLines, setTwoLines] = useState(false);
+    const [isLockTouched, setIsLockTouched] = useState(false);
+    const [isViewTouched, setIsViewTouched] = useState(false);
 
-    const buttonGroups = {
+    // Memoize SVG icons
+    const lockIcon = useMemo(() => locked ? <Lock style={{ pointerEvents: 'none' }} /> : <LockOpen style={{ pointerEvents: 'none' }} />, [locked]);
+    const visibilityIcon = useMemo(() => visible ? <Visibility style={{ pointerEvents: 'none' }} /> : <VisibilityOff style={{ pointerEvents: 'none' }} />, [visible]);
+
+    // Memoize event handlers
+    const handleLockTouchStart = useCallback(() => {
+        setIsLockTouched(true);
+    }, []);
+
+    const handleLockTouchEnd = useCallback(() => {
+        setIsLockTouched(false);
+        setLocked(!locked);
+    }, [locked, setLocked]);
+
+    const handleViewTouchStart = useCallback(() => {
+        setIsViewTouched(true);
+    }, []);
+
+    const handleViewTouchEnd = useCallback(() => {
+        setIsViewTouched(false);
+        setVisible(!visible);
+    }, [visible]);
+
+    // Memoize buttonGroups
+    const buttonGroups = useMemo(() => ({
         1: [
             { id: 1, text: '1', color: '#4CAF50', size: 1, icon: <Home />, group: 1 },
             { id: 2, text: '2', color: '#2196F3', size: 2, icon: <Star />, group: 1 },
@@ -32,7 +59,8 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
             { id: 10, text: '10', color: '#FFEB3B', size: 2, icon: <Star />, group: 3 },
             { id: 11, text: '11', color: '#FF9800', size: 1, icon: <Favorite />, group: 3 },
         ],
-    };
+    }), []);
+
 
     return (
         <div>
@@ -66,17 +94,10 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
                     </div>
 
                     <div className="UI note-button">
-                        <Button
-                            key={0}
-                            id={0}
-                            text={'Note'}
-                            color={'#DAA520'}
-                            size={1}
+                        <NoteButton
                             createRectangle={createRectangle}
                             zoom={zoom}
                             mouseFollowerRef={mouseFollowerRef}
-                            icon={<Home />}
-                            group={0}
                         />
                     </div>
 
@@ -94,20 +115,51 @@ const UI = ({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startD
             </div>
 
             <div className="UI bottom-left-container">
-                <button className={`UI lock-button ${locked ? '' : 'unlocked'}`} onClick={() => setLocked(!locked)} onTouchStart={() => setLocked(!locked)}>
-                    {locked ? <Lock /> : <LockOpen />}
+                <button
+                    className={`UI lock-button ${locked ? '' : 'unlocked'} ${isLockTouched ? 'hover' : ''}`}
+                    onClick={() => setLocked(!locked)}
+                    onTouchStart={handleLockTouchStart}
+                    onTouchEnd={handleLockTouchEnd}
+                >
+                    {lockIcon}
                 </button>
 
-                <button className={`UI view-button ${visible ? '' : 'hidden'}`} onClick={() => setVisible(!visible)} onTouchStart={() => setVisible(!visible)}>
-                    {visible ? <Visibility /> : <VisibilityOff />}
+                <button
+                    className={`UI view-button ${visible ? '' : 'hidden'} ${isViewTouched ? 'hover' : ''}`}
+                    onClick={() => setVisible(!visible)}
+                    onTouchStart={handleViewTouchStart}
+                    onTouchEnd={handleViewTouchEnd}
+                >
+                    {visibilityIcon}
                 </button>
             </div>
 
             <div className="UI bottom-right-container">
-                <Trashcan className="UI trashcan" setIsOverTrashcan={setIsOverTrashcan} />
+                <Trashcan className="UI trashcan" activeRectangle={activeRectangle} setOverTrashcanId={setOverTrashcanId} />
             </div>
         </div>
     );
+});
+
+const areEqual = (prevProps, nextProps) => {
+    const isStartDateEqual = prevProps.startDate?.getTime() === nextProps.startDate?.getTime();
+    const isEndDateEqual = prevProps.endDate?.getTime() === nextProps.endDate?.getTime();
+
+    return (
+        prevProps.createRectangle === nextProps.createRectangle &&
+        prevProps.zoom === nextProps.zoom &&
+        prevProps.mouseFollowerRef === nextProps.mouseFollowerRef &&
+        prevProps.locked === nextProps.locked &&
+        prevProps.setLocked === nextProps.setLocked &&
+        isStartDateEqual &&
+        isEndDateEqual &&
+        prevProps.setStartDate === nextProps.setStartDate &&
+        prevProps.setEndDate === nextProps.setEndDate &&
+        prevProps.isOpen === nextProps.isOpen &&
+        prevProps.setIsOpen === nextProps.setIsOpen &&
+        prevProps.activeRectangle === nextProps.activeRectangle &&
+        prevProps.setOverTrashcanId === nextProps.setOverTrashcanId
+    );
 };
 
-export default UI;
+export default React.memo(UI, areEqual);

@@ -9,6 +9,9 @@
     left: calc(2.3vh + 0.5rem);
     animation-duration: 0.4s;
     animation-fill-mode: forwards;
+    width: 3ch;
+    pointer-events: none;
+    height: calc(1.2* (2*(25px + 2vw) + 2*(7.5px + 0.75vw)));
 }
 
 .out.top-left-container {
@@ -29,14 +32,14 @@
     }
 
     100% {
-        transform: translateY(-20ch);
+        transform: translateY(-150%);
         visibility: hidden;
     }
 }
 
 @keyframes inTop {
     0% {
-        transform: translateY(-20ch);
+        transform: translateY(-150%);
         visibility: visible;
     }
 
@@ -111,6 +114,8 @@
 }
 
 .switch-buttons-container {
+    width: 10.8ch;
+    box-sizing: border-box;
     background-color: #e3e3e3;
     border-top-right-radius: 10ch;
     border-bottom-right-radius: 10ch;
@@ -242,7 +247,10 @@
 
 .view-button:hover,
 .lock-button:hover,
-.switch-button:hover {
+.switch-button:hover,
+.switch-button.hover,
+.view-button.hover,
+.lock-button.hover {
     background-color: #5a5d63;
     transform: scale(1.075);
 }
@@ -263,7 +271,6 @@
     color: white;
     width: calc(0.3vw + 3.5em);
     height: calc(0.3vw + 3.5em);
-    cursor: pointer;
     border-radius: 100%;
     display: flex;
     align-items: center;

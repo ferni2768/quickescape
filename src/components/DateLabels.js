@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import dayjs from 'dayjs';
 
-const DateLabels = ({ startDate, endDate, gridSize }) => {
-    const dates = [];
-    let currentDate = dayjs(startDate);
+const DateLabels = React.memo(({ startDate, endDate, gridSize }) => {
+    // Memoize the dates array
+    const dates = useMemo(() => {
+        const datesArray = [];
+        let currentDate = dayjs(startDate);
 
-    while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
-        dates.push(currentDate);
-        currentDate = currentDate.add(1, 'day');
-    }
+        while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
+            datesArray.push(currentDate);
+            currentDate = currentDate.add(1, 'day');
+        }
+
+        return datesArray;
+    }, [startDate, endDate]);
+
 
     return (
         <div className="date-labels">
@@ -23,6 +29,6 @@ const DateLabels = ({ startDate, endDate, gridSize }) => {
             ))}
         </div>
     );
-};
+});
 
 export default DateLabels;

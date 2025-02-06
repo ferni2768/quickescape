@@ -6,7 +6,7 @@
     cursor: pointer;
     z-index: 1000;
     font-size: calc(0.3vw + 0.75em);
-    width: 12ch;
+    width: 13ch;
     height: calc(2*(7.5px + 0.75vw));
     margin-top: 0.3rem;
     transition: transform ease-out 0.2s;

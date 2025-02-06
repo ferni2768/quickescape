@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import '../styles/TripName.css';
 
-const BigTextEditor = ({ setTwoLines }) => {
+const BigTextEditor = memo(({ setTwoLines }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [text, setText] = useState("Trip Name");
     const textareaRef = useRef(null);
@@ -15,8 +15,7 @@ const BigTextEditor = ({ setTwoLines }) => {
             // Move the cursor to the end of the text
             textarea.setSelectionRange(text.length, text.length);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEditing]);
+    }, [isEditing, text.length]);
 
     // Handle click outside to exit editing mode
     useEffect(() => {
@@ -25,7 +24,7 @@ const BigTextEditor = ({ setTwoLines }) => {
                 setIsEditing(false);
         };
         window.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('touchstart', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside, { passive: false });
         return () => {
             window.removeEventListener('mousedown', handleClickOutside);
             window.removeEventListener('touchstart', handleClickOutside);
@@ -33,7 +32,7 @@ const BigTextEditor = ({ setTwoLines }) => {
     }, [isEditing]);
 
     // Handle input change and limit to two lines
-    const handleInputChange = (e) => {
+    const handleInputChange = useCallback((e) => {
         const textarea = textareaRef.current;
         const textElement = textRef.current;
         let newText = e.target.value;
@@ -62,15 +61,32 @@ const BigTextEditor = ({ setTwoLines }) => {
                 setTwoLines(true);
             }
         }, 10);
-    };
+    }, [setTwoLines]);
 
     // Handle blur to remove the last line break
-    const handleBlur = () => {
-        let cleanText = text.replace(/(\n\u200B?|\u200B)$/, '');
+    const handleBlur = useCallback(() => {
+        const textElement = textRef.current;
+        const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight);
+        textElement.textContent = text;
+        const textHeight = textElement.scrollHeight;
+        const numberOfLines = textHeight / lineHeight;
+
+        let cleanText = text;
+
+        // If there are more than 2 lines, trim the excess characters
+        if (numberOfLines > 2.5) {
+            while (textElement.scrollHeight / lineHeight > 2.5 && cleanText.length > 0) {
+                cleanText = cleanText.slice(0, -1);
+                textElement.textContent = cleanText;
+            }
+        }
+
+        cleanText = cleanText.replace(/(\n\u200B?|\u200B)$/, '');
+
         if (cleanText !== text) setTwoLines(false);
         setText(cleanText);
         setIsEditing(false);
-    };
+    }, [text, setTwoLines]);
 
     // Set the height of the textarea to fit the text when editing starts
     useEffect(() => {
@@ -93,11 +109,10 @@ const BigTextEditor = ({ setTwoLines }) => {
         } else {
             handleBlur();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEditing, text, setTwoLines]);
+    }, [isEditing, text, setTwoLines, handleBlur]);
 
     // Handle backspace to remove the last line break
-    const handleKeyDown = (e) => {
+    const handleKeyDown = useCallback((e) => {
         if (e.key === 'Backspace' && text.endsWith('\u200B')) {
             e.preventDefault();
             const newText = text.slice(0, -2);
@@ -106,11 +121,15 @@ const BigTextEditor = ({ setTwoLines }) => {
             setTwoLines(false);
             setText(newText);
         }
-    };
+    }, [text, setTwoLines]);
+
+    // Memoize the click and touch handlers
+    const handleClick = useCallback(() => setIsEditing(true), []);
+    const handleTouchStart = useCallback(() => setIsEditing(true), []);
 
 
     return (
-        <div className="UI big-text-editor" onClick={() => setIsEditing(true)} onTouchStart={() => setIsEditing(true)}>
+        <div className="UI big-text-editor" onClick={handleClick} onTouchStart={handleTouchStart}>
             {isEditing ? (
                 <textarea
                     className="UI big-text-area"
@@ -128,6 +147,6 @@ const BigTextEditor = ({ setTwoLines }) => {
             </div>
         </div>
     );
-};
+});
 
 export default BigTextEditor;
