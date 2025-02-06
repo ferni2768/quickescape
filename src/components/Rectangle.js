@@ -20,6 +20,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [showGhost, setShowGhost] = useState(false);
     const rectangleWidth = RECTANGLE_SIZES[size];
     const justCreated = useRef(true);
+    const dragged = useRef(false);
     const xOffsetSpring = useSpring({
         from: { xOffset: (viewportState.windowSize.width) / zoom },
         to: { xOffset: 0 },
@@ -97,7 +98,8 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 return r;
             })
         );
-    }, [rectangleState.absolutePosition.x, rectangleState.absolutePosition.y, rectangleState.height, rect.id, setRectangles]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rectangleState.absolutePosition, rectangleState.height, rect.id, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -117,8 +119,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         event.preventDefault();
 
         if (state === 0) {
-            if (isEditing) setIsEditing(false);
             setState(1);
+            dragged.current = true;
+            if (isEditing) setIsEditing(false);
             event.stopPropagation();
 
             const { clientX, clientY } = getClientXY(event);
@@ -161,7 +164,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
 
             const newDistance = Math.sqrt(dx * dx + dy * dy) / 10;
-            if (Math.abs(newDistance - editDistance) > 0.1)
+            if (Math.abs(newDistance - editDistance) > 0.5)
                 setEditDistance(newDistance);
 
             if (!isResizing) {
@@ -227,50 +230,91 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             setStartTime(performance.now());
             setEditDistance(0);
         } else {
+            if (dragged.current) {
+                if (!justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
+                    setIsEditing(true);
 
-            if (!justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
-                setIsEditing(true);
+                setStartTime(null);
 
-            setStartTime(null);
+                if (isOverTrashcan && !isResizing) {
+                    const trashcan = document.querySelector('.trashcan');
+                    trashcan.classList.remove('deleting');
+                    document.body.style.cursor = 'default';
+                    setRectangleState((prev) => ({ ...prev, deleting: true }));
+                    setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
 
-            if (isOverTrashcan && !isResizing) {
-                const trashcan = document.querySelector('.trashcan');
-                trashcan.classList.remove('deleting');
-                document.body.style.cursor = 'default';
-                setRectangleState((prev) => ({ ...prev, deleting: true }));
-                setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
+                    setTimeout(() => {
+                        setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
+                    }, 200);
 
-                setTimeout(() => {
-                    setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
-                }, 200);
+                    return;
+                }
 
-                return;
-            }
+                if (!isResizing && !isNote) {
+                    var overlapping = false;
 
-            if (!isResizing && !isNote) {
-                var overlapping = false;
+                    if (showGhost) {
+                        for (let i = 0; i < rectangles.length; i++) {
+                            const otherRect = rectangles[i];
+                            if (otherRect.id !== rect.id && doesOverlap(otherRect.id, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
+                                overlapping = true;
+                                break;
+                            }
+                        }
+                    }
 
-                if (showGhost) {
-                    for (let i = 0; i < rectangles.length; i++) {
-                        const otherRect = rectangles[i];
-                        if (otherRect.id !== rect.id && doesOverlap(otherRect.id, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
-                            overlapping = true;
-                            break;
+                    if (showGhost && !overlapping) {
+                        const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
+                            Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
+                        setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
+                    } else if (showGhost && overlapping) {
+                        if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
+                        else {
+                            const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
+                            setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
                         }
                     }
                 }
+            } else {
+                setStartTime(null);
 
-                if (showGhost && !overlapping) {
-                    const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
-                        Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
-                    setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
-                } else if (showGhost && overlapping) {
-                    if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
-                    else {
-                        const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
-                        setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                const { offsetLeft, offsetTop } = mouseFollowerRef.current;
+                const newAbsolutePosition = {
+                    x: (offsetLeft - (rectangleWidth / 2) * zoom) / zoom,
+                    y: (offsetTop - (rectangleState.height / 2) * zoom) / zoom,
+                };
+                setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
+
+                setTimeout(() => {
+                    if (!isNote) {
+                        var overlapping = false;
+                        var ghost = false;
+
+                        const centerSectionStart = centerSectionRef.current.style.x - (rectangleWidth + 100);
+                        const centerSectionEnd = centerSectionRef.current.style.x + 100;
+                        if (!isResizing && rectangleState.absolutePosition.x > centerSectionStart && rectangleState.absolutePosition.x < centerSectionEnd
+                            && rectangleState.absolutePosition.y >= -gridSize * 7 && rectangleState.absolutePosition.y <= (centerSectionRef.current ? centerSectionRef.current.offsetHeight - rectangleState.height + 7 * gridSize : 0)) {
+                            ghost = true;
+                        }
+                        if (ghost) {
+                            for (let i = 0; i < rectangles.length; i++) {
+                                const otherRect = rectangles[i];
+                                if (otherRect.id !== rect.id && doesOverlap(otherRect.id, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) {
+                                    overlapping = true;
+                                    break;
+                                }
+                            }
+                            if (!overlapping) {
+                                const snappedY = centerSectionRef.current ? Math.min(centerSectionRef.current.offsetHeight - rectangleState.height,
+                                    Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize)) : Math.max(0, Math.round(rectangleState.absolutePosition.y / gridSize) * gridSize);
+                                setRectangleState((prev) => ({ ...prev, absolutePosition: { x: centerSectionRef.current.style.x - rectangleWidth / 2, y: snappedY } }));
+                            } else {
+                                const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
+                                setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                            }
+                        }
                     }
-                }
+                }, 0);
             }
 
             setIsResizing(false);
@@ -286,7 +330,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             window.removeEventListener('touchmove', handleMouseRectangle);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isDragging, rectangleState.initialDragPosition, rect.id]);
+    }, [isDragging, rectangleState.initialDragPosition, rect.id, centerSectionRef]);
 
     // Show ghost when rectangle is in the center section
     useEffect(() => {

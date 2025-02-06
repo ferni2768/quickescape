@@ -135,22 +135,20 @@ function App() {
     const rect = rectangles.find(r => event.target.classList.contains(`rectangle-${r.id}`));
     const UI = event.target.classList.contains('UI') ? event.target : null;
 
+    const { clientX, clientY } = getClientXY(event);
+
+    if (mouseFollowerRef.current && centerSectionRef.current) {
+      const cameraRect = centerSectionRef.current.getBoundingClientRect();
+      mouseFollowerRef.current.style.left = `${clientX - cameraRect.left - 47.5 * zoom}px`;
+      mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
+
+      setAdjustedMousePosition({
+        x: (clientX - cameraRect.left) / zoom,
+        y: (clientY - cameraRect.top) / zoom
+      });
+    }
+
     if (rect) {
-      const coords = getClientXY(event);
-      if (!coords) return;
-      const { clientX, clientY } = coords;
-
-      if (mouseFollowerRef.current && centerSectionRef.current) {
-        const cameraRect = centerSectionRef.current.getBoundingClientRect();
-        mouseFollowerRef.current.style.left = `${clientX - cameraRect.left - 47.5 * zoom}px`;
-        mouseFollowerRef.current.style.top = `${clientY - cameraRect.top}px`;
-
-        // Calculate adjusted position
-        const adjustedX = (clientX - cameraRect.left) / zoom;
-        const adjustedY = (clientY - cameraRect.top) / zoom;
-        setAdjustedMousePosition({ x: adjustedX, y: adjustedY });
-      }
-
       setActiveRectangle(rect.id);
       setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: instance.id === rect.id })));
     } else {
@@ -177,10 +175,19 @@ function App() {
     event.preventDefault();
     event.stopPropagation();
 
-    setRectangles(prev => prev.map(rect =>
-      rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
-    ));
-    setActiveRectangle(null);
+    setTimeout(() => {
+      setRectangles(prev => prev.map(rect =>
+        rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
+      ));
+      setActiveRectangle(null);
+    }, 0);
+
+    setTimeout(() => {
+      setRectangles(prev => prev.map(rect =>
+        rect.isDragging ? { ...rect, isDragging: false } : rect
+      ));
+    }, 10);
+
     document.body.style.cursor = 'default';
     handleTouchEnd();
   }, [activeRectangle, handleTouchEnd, setActiveRectangle, setRectangles]);

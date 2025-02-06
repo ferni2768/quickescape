@@ -25,6 +25,10 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
         hasExecutedRef.current = false;
     };
 
+    const handleMouseUp = useCallback(() => {
+        if (isDragging) resetButtonPosition();
+    }, [isDragging]);
+
     const handleMouseMove = useCallback((e) => {
         if (e.touches && e.touches.length > 1) { handleMouseUp(); return; }
         if (!isDragging || hasExecutedRef.current) return;
@@ -45,11 +49,7 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
                 button.style.transform = `translateX(calc(${adjustedDistance}px - 2ch))`;
             }
         }
-    }, [isDragging, startX, mouseFollowerRef, createRectangle, zoom, color, size, icon, group]);
-
-    const handleMouseUp = useCallback(() => {
-        if (isDragging) resetButtonPosition();
-    }, [isDragging]);
+    }, [isDragging, startX, mouseFollowerRef, createRectangle, zoom, color, size, icon, group, handleMouseUp]);
 
     // Animate the button when the active group changes
     useEffect(() => {
