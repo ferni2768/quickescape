@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import Button from './Button';
-import { Home } from '@mui/icons-material';
+import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 
 const NoteButton = memo(({ createRectangle, zoom, mouseFollowerRef }) => {
     return (
@@ -8,13 +8,14 @@ const NoteButton = memo(({ createRectangle, zoom, mouseFollowerRef }) => {
             key={0}
             id={0}
             text={'Note'}
-            color={'#DAA520'}
+            color={'#e8ac15'}
             size={1}
             createRectangle={createRectangle}
             zoom={zoom}
             mouseFollowerRef={mouseFollowerRef}
-            icon={<Home />}
+            icon={<StickyNote2Icon />}
             group={0}
+            className='note'
         />
     );
 });

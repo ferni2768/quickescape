@@ -103,7 +103,10 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
             ref={buttonRef}
             id={`button-${id}`}
             className={`UI rectangle-button no-animation`}
-            style={{ display: group !== activeGroup && group !== 0 && startRef.current < 2 ? 'none' : '', backgroundColor: color, zIndex: group === activeGroup || group === 0 ? 100 : 90 }}
+            style={{
+                display: group !== activeGroup && group !== 0 && startRef.current < 2 ? 'none' : '', backgroundColor: color,
+                zIndex: group === activeGroup || group === 0 ? 100 : 90, width: group === 0 ? '12ch' : '13ch'
+            }}
             onMouseDown={handleMouseDown}
             onTouchStart={(e) => { handleMouseDown(e); buttonRef.current.style.transform = 'translateX(-2ch)'; }}
             onMouseEnter={() => { buttonRef.current.style.transform = 'translateX(-2ch)'; }}

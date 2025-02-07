@@ -146,7 +146,8 @@
 
 .rectangle-button {
     font-size: calc(0.75vh + 1em);
-    width: 12ch;
+    font-weight: 400;
+    width: 13ch;
     background-color: #4CAF50;
     border: none;
     color: white;
@@ -156,6 +157,7 @@
     text-decoration: none;
     display: flex;
     flex-direction: row;
+    align-content: center;
     margin-bottom: 7px;
     cursor: pointer;
     border-top-right-radius: 1ch;
@@ -223,6 +225,9 @@
     margin: 0.2ch;
     cursor: pointer;
     border-radius: 5ch;
+    align-items: center;
+    justify-content: center;
+    display: flex;
     transition: background-color 0.1s, transform 0.1s;
 }
 
@@ -286,6 +291,7 @@
 .rectangle-button svg {
     width: calc(0.75vh + 0.7em);
     height: calc(0.75vh + 0.7em);
+    margin-left: 0.3ch;
 }
 
 .view-button svg,
@@ -297,6 +303,11 @@
 .trashcan svg {
     width: calc(0.3vw + 1.5em);
     height: calc(0.3vw + 1.5em);
+}
+
+.switch-button svg {
+    width: calc(0.75vh + 0.95ch);
+    height: calc(0.75vh + 0.95ch);
 }
 
 .ui-container {
