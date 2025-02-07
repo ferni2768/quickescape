@@ -6,7 +6,7 @@ import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
 import NoteButton from './UI_buttons/NoteButton';
 import {
-    LocationOn, Flight, DirectionsCar, DirectionsBus, Train, LocalDining, AccountBalance, ShoppingBag, LocalBar, Home, AccessTimeFilled,
+    LocationOn, Flight, DirectionsCar, DirectionsBus, Train, LocalDining, AccountBalance, ShoppingBag, LocalBar, Hotel, AccessTimeFilled,
     Lock, LockOpen, Visibility, VisibilityOff
 } from '@mui/icons-material';
 import './styles/Buttons.css';
@@ -46,21 +46,21 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
     // Memoize buttonGroups
     const buttonGroups = useMemo(() => ({
         1: [
-            { id: 1, text: 'Plane', color: '#2b2b2b', size: 2, icon: <Flight />, group: 1 },
-            { id: 2, text: 'Train', color: '#2b2b2b', size: 2, icon: <Train />, group: 1 },
-            { id: 3, text: 'Bus', color: '#2b2b2b', size: 2, icon: <DirectionsBus />, group: 1 },
-            { id: 4, text: 'Car', color: '#2b2b2b', size: 2, icon: <DirectionsCar />, group: 1 },
+            { id: 1, text: 'Plane', color: '#2b2b2b', size: 1, icon: <Flight />, group: 1 },
+            { id: 2, text: 'Train', color: '#2b2b2b', size: 1, icon: <Train />, group: 1 },
+            { id: 3, text: 'Bus', color: '#2b2b2b', size: 1, icon: <DirectionsBus />, group: 1 },
+            { id: 4, text: 'Car', color: '#2b2b2b', size: 1, icon: <DirectionsCar />, group: 1 },
         ],
         2: [
-            { id: 5, text: 'Tour', color: '#e61919', size: 1, icon: <LocationOn />, group: 2 },
-            { id: 6, text: 'Culture', color: '#8B4513', size: 1, icon: <AccountBalance />, group: 2 },
-            { id: 7, text: 'Shop', color: '#23ba23', size: 1, icon: <ShoppingBag />, group: 2 },
-            { id: 8, text: 'Party', color: '#9c179c', size: 1, icon: <LocalBar />, group: 2 }
+            { id: 5, text: 'Tour', color: '#e61919', size: 2, icon: <LocationOn />, group: 2 },
+            { id: 6, text: 'Culture', color: '#8B4513', size: 2, icon: <AccountBalance />, group: 2 },
+            { id: 7, text: 'Shop', color: '#23ba23', size: 2, icon: <ShoppingBag />, group: 2 },
+            { id: 8, text: 'Party', color: '#9c179c', size: 2, icon: <LocalBar />, group: 2 }
         ],
         3: [
-            { id: 9, text: 'Hotel', color: '#1f85de', size: 1, icon: <Home />, group: 3 },
-            { id: 10, text: 'Eat', color: '#e36802', size: 1, icon: <LocalDining />, group: 3 },
-            { id: 11, text: 'Rest', color: '#a3a3a3', size: 1, icon: <AccessTimeFilled />, group: 3 },
+            { id: 9, text: 'Hotel', color: '#6e6e6e', size: 1, icon: <Hotel />, group: 3 },
+            { id: 10, text: 'Rest', color: '#a3a3a3', size: 1, icon: <AccessTimeFilled />, group: 3 },
+            { id: 11, text: 'Eat', color: '#e36802', size: 3, icon: <LocalDining />, group: 3 },
         ],
     }), []);
 

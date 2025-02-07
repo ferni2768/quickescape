@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
-export const RECTANGLE_SIZES = { 1: 150, 2: 300 };
+export const RECTANGLE_SIZES = { 1: 325, 2: 275, 3: 200 };
 
 export const useController = () => {
     const [rectangles, setRectangles] = useState([]);

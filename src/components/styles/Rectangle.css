@@ -58,12 +58,17 @@
 
 .rectangle.size-1,
 .ghost.size-1 {
-    width: 150px;
+    width: 325px;
 }
 
 .rectangle.size-2,
 .ghost.size-2 {
-    width: 300px;
+    width: 275px;
+}
+
+.rectangle.size-3,
+.ghost.size-3 {
+    width: 200px;
 }
 
 .rectangle.dragging {
