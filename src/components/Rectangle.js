@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated, easings } from '@react-spring/web';
 import { RECTANGLE_SIZES } from '../Controller';
+import { RECTANGLE_BORDER_RADIUS } from '../Controller';
 import './styles/Rectangle.css';
 
 const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
@@ -92,14 +93,13 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             prevRectangles.map((r) => {
                 if (r.id === rect.id) {
                     // Only update if one of the values has changed
-                    if (r.x !== rectangleState.absolutePosition.x || r.y !== rectangleState.absolutePosition.y || r.height !== rectangleState.height)
-                        return { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height };
+                    if (r.x !== rectangleState.absolutePosition.x || r.y !== rectangleState.absolutePosition.y || r.height !== rectangleState.height || r.border !== rect.border)
+                        return { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height, border: rect.border };
                 }
                 return r;
             })
         );
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rectangleState.absolutePosition, rectangleState.height, rect.id, setRectangles]);
+    }, [rectangleState.absolutePosition, rectangleState.absolutePosition.y, rectangleState.height, rect.id, rect.border, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -440,6 +440,10 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
                     visibility: isVisible ? 'visible' : 'hidden',
                     opacity: overTrashcanProps.opacity,
+                    borderTopLeftRadius: (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderTopRightRadius: (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderBottomLeftRadius: (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderBottomRightRadius: (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
                 }}
             >
                 <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
@@ -533,7 +537,8 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.color === nextProps.color &&
         prevProps.size === nextProps.size &&
         prevProps.icon === nextProps.icon &&
-        prevProps.isNote === nextProps.isNote
+        prevProps.isNote === nextProps.isNote &&
+        prevProps.rect.border === nextProps.rect.border
     );
 };
 

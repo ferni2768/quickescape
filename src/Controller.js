@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export const RECTANGLE_SIZES = { 1: 325, 2: 275, 3: 200 };
+export const RECTANGLE_BORDER_RADIUS = '1.5ch';
 
 export const useController = () => {
     const [rectangles, setRectangles] = useState([]);
@@ -34,6 +35,7 @@ export const useController = () => {
             x,
             y,
             height,
+            border: 0,
             isDragging: true,
             isResizing: false,
             showGhost: false,

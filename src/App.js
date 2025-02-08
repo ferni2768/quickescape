@@ -3,6 +3,7 @@ import { animated } from '@react-spring/web';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
+import { RECTANGLE_SIZES } from './Controller';
 import UI from './components/UI';
 import dayjs from 'dayjs';
 import DateLabels from './components/DateLabels';
@@ -85,6 +86,41 @@ function App() {
     };
   }, [setAppDimensions]);
 
+  // Function to check if rectangle is snapped
+  const isSnapped = useCallback((rect) => {
+    return rect.x === centerSectionRef.current.style.x - (RECTANGLE_SIZES[rect.size]) / 2;
+  }, [centerSectionRef]);
+
+  // Function to check if rectangle has adjacent rectangles
+  const checkAdjacentBorders = useCallback((targetRect) => {
+    setRectangles(prev => prev.map(rect => {
+      let newBorder = rect.border;
+
+      const topNeighbor = prev.find(r =>
+        r.id !== rect.id &&
+        isSnapped(r) &&
+        r.size <= rect.size &&
+        Math.abs(r.y + r.height - rect.y) < gridSize / 2
+      );
+      const bottomNeighbor = prev.find(r =>
+        r.id !== rect.id &&
+        isSnapped(r) &&
+        r.size <= rect.size &&
+        Math.abs(rect.y + rect.height - r.y) < gridSize / 2
+      );
+
+      // For the target rectangle
+      if (rect.id === targetRect.id) {
+        newBorder = (topNeighbor ? 1 : 0) + (bottomNeighbor ? 2 : 0);
+      } else {
+        if (bottomNeighbor) newBorder |= 2;
+        if (topNeighbor) newBorder |= 1;
+      }
+
+      return newBorder !== rect.border ? { ...rect, border: newBorder } : rect;
+    }));
+  }, [gridSize, setRectangles, isSnapped]);
+
   // Memoized move handler
   const handleMoveWrapper = useCallback((event) => {
     event.preventDefault();
@@ -150,7 +186,27 @@ function App() {
 
     if (rect) {
       setActiveRectangle(rect.id);
-      setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: instance.id === rect.id })));
+
+      setRectangles(prevRectangles => {
+        const updated = prevRectangles.map(r => {
+          if (r.id === rect.id) return { ...r, border: 0, isDragging: true };
+
+          // Check if it was a previous neighbor
+          const wasTopNeighbor = Math.abs(r.y + r.height - rect.y) < gridSize / 2;
+          const wasBottomNeighbor = Math.abs(rect.y + rect.height - r.y) < gridSize / 2;
+
+          // Clear neighbor borders if they were adjacent
+          if (isSnapped(r)) {
+            let newBorder = r.border;
+            if (wasTopNeighbor) newBorder &= ~2;
+            if (wasBottomNeighbor) newBorder &= ~1;
+            return { ...r, border: newBorder };
+          }
+          return r;
+        });
+
+        return updated;
+      });
     } else {
       // If no rectangle is found, set all to isDragging: false
       setActiveRectangle(null);
@@ -158,7 +214,7 @@ function App() {
 
       if (!UI && !isOpen) handleMouseDownCamera(event);
     }
-  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition]);
+  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped]);
 
   useEffect(() => {
     window.addEventListener('touchstart', handleDown, { passive: false });
@@ -170,27 +226,32 @@ function App() {
     };
   }, [handleDown]);
 
-  // Memoized up handler
+  // Memoized mouse up handler
   const handleUp = useCallback((event) => {
     event.preventDefault();
     event.stopPropagation();
 
-    setTimeout(() => {
-      setRectangles(prev => prev.map(rect =>
-        rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
-      ));
-      setActiveRectangle(null);
-    }, 0);
+    const rect = rectangles.find(r => r.id === activeRectangle);
 
     setTimeout(() => {
       setRectangles(prev => prev.map(rect =>
         rect.isDragging ? { ...rect, isDragging: false } : rect
       ));
-    }, 10);
+      setActiveRectangle(null);
+    }, 5);
+
+    setTimeout(() => {
+      if (rect) {
+        const currentRect = rectangles.find(r => r.id === rect.id);
+
+        checkAdjacentBorders(currentRect);
+
+      }
+    }, 250);
 
     document.body.style.cursor = 'default';
     handleTouchEnd();
-  }, [activeRectangle, handleTouchEnd, setActiveRectangle, setRectangles]);
+  }, [activeRectangle, handleTouchEnd, setActiveRectangle, setRectangles, rectangles, checkAdjacentBorders]);
 
   useEffect(() => {
     window.addEventListener('touchend', handleUp, { passive: false });
