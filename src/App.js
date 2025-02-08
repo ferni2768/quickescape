@@ -93,6 +93,7 @@ function App() {
 
   // Function to check if rectangle has adjacent rectangles
   const checkAdjacentBorders = useCallback((targetRect) => {
+    if (targetRect.isNote) return;
     setRectangles(prev => prev.map(rect => {
       let newBorder = rect.border;
 
@@ -196,7 +197,7 @@ function App() {
           const wasBottomNeighbor = Math.abs(rect.y + rect.height - r.y) < gridSize / 2;
 
           // Clear neighbor borders if they were adjacent
-          if (isSnapped(r)) {
+          if (!r.isNote && isSnapped(r)) {
             let newBorder = r.border;
             if (wasTopNeighbor) newBorder &= ~2;
             if (wasBottomNeighbor) newBorder &= ~1;
@@ -208,9 +209,17 @@ function App() {
         return updated;
       });
     } else {
-      // If no rectangle is found, set all to isDragging: false
-      setActiveRectangle(null);
-      setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: false })));
+      const rect = rectangles.find(r => r.id === activeRectangle);
+      if (rect) {
+        setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: false })));
+        setTimeout(() => {
+          if (rect) {
+            const currentRect = rectangles.find(r => r.id === rect.id);
+            checkAdjacentBorders(currentRect);
+          }
+        }, 250);
+        setActiveRectangle(null);
+      }
 
       if (!UI && !isOpen) handleMouseDownCamera(event);
     }
@@ -243,9 +252,7 @@ function App() {
     setTimeout(() => {
       if (rect) {
         const currentRect = rectangles.find(r => r.id === rect.id);
-
         checkAdjacentBorders(currentRect);
-
       }
     }, 250);
 

@@ -130,7 +130,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
             setRectangleState((prev) => ({ ...prev, initialDragPosition: { ...rectangleState.absolutePosition } }));
 
-            if (!justCreated.current && adjustedMousePosition.y >= currentRectBottom - 35 && adjustedMousePosition.x >= currentRectRight - 35) {
+            if (!justCreated.current && adjustedMousePosition.y >= currentRectBottom - 50 && adjustedMousePosition.x >= currentRectRight - 50) {
                 setIsResizing(true);
                 document.body.style.cursor = 'ns-resize';
                 setPositionState((prev) => ({
@@ -440,10 +440,10 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
                     visibility: isVisible ? 'visible' : 'hidden',
                     opacity: overTrashcanProps.opacity,
-                    borderTopLeftRadius: (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
-                    borderTopRightRadius: (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
-                    borderBottomLeftRadius: (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
-                    borderBottomRightRadius: (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderTopLeftRadius: isNote ? 0 : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderTopRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderBottomLeftRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                    borderBottomRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
                 }}
             >
                 <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>

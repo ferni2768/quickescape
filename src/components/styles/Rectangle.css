@@ -11,7 +11,7 @@
     cursor: grab;
     overflow: hidden;
     overflow-wrap: anywhere;
-    transition: border-radius 0.2s;
+    transition: border-radius 0.2s ease-in-out;
 }
 
 .ghost {
@@ -41,11 +41,11 @@
 }
 
 .resize-hint.dragging {
-    opacity: 0.2;
+    opacity: 0.4;
 }
 
 .resize-hint.dragging.resizing {
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .note {
