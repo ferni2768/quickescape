@@ -51,6 +51,7 @@ function App() {
     cameraProps,
     zoomProps,
     zoom,
+    zooming,
     refresh
   } = Camera(cameraDeps.getClientXY, cameraDeps.locked);
 
@@ -185,7 +186,7 @@ function App() {
       });
     }
 
-    if (rect) {
+    if ((rect && !event.touches) || (rect && event.touches && event.touches.length === 1)) {
       setActiveRectangle(rect.id);
 
       setRectangles(prevRectangles => {
@@ -223,7 +224,7 @@ function App() {
 
       if (!UI && !isOpen) handleMouseDownCamera(event);
     }
-  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped]);
+  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped, activeRectangle, checkAdjacentBorders]);
 
   useEffect(() => {
     window.addEventListener('touchstart', handleDown, { passive: false });
@@ -341,6 +342,7 @@ function App() {
               key={rect.id}
               viewportState={viewportState}
               zoom={zoom}
+              zooming={zooming}
               centerSectionRef={centerSectionRef}
               mouseFollowerRef={mouseFollowerRef}
               rect={rect}

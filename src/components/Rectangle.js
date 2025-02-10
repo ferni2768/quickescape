@@ -4,7 +4,7 @@ import { RECTANGLE_SIZES } from '../Controller';
 import { RECTANGLE_BORDER_RADIUS } from '../Controller';
 import './styles/Rectangle.css';
 
-const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
+const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
     rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote, isOverTrashcan }) => {
 
     // State object with state variables
@@ -117,6 +117,12 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     // Handle mouse/touch move for the rectangle to update its position and size
     const handleMouseRectangle = useCallback((event) => {
         event.preventDefault();
+
+        if (event.touches && event.touches.length > 1) {
+            setState(0);
+            setStartTime(null);
+            return;
+        }
 
         if (state === 0) {
             setState(1);
@@ -231,7 +237,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             setEditDistance(0);
         } else {
             if (dragged.current) {
-                if (!justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
+                if (!zooming && !justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
                     setIsEditing(true);
 
                 setStartTime(null);
@@ -471,7 +477,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                         </>
                     )}
                 </div>
-                {isEditing ? (
+                {isEditing && !zooming ? (
                     <textarea
                         className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
                         value={text}
