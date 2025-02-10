@@ -377,16 +377,6 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
         };
     }, [isEditing, rect.id]);
 
-    // Focus on the textarea when editing
-    useEffect(() => {
-        if (isEditing && textareaRef.current) {
-            const textarea = textareaRef.current;
-            textarea.focus();
-            // Move the cursor to the end of the text
-            textarea.setSelectionRange(text.length, text.length);
-        }
-    }, [isEditing, text.length]);
-
     // Handle rectangle deletion when dragging over the trashcan
     useEffect(() => {
         if (!isOverTrashcan || !isDragging) return;
@@ -477,7 +467,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                         </>
                     )}
                 </div>
-                {isEditing && !zooming ? (
+                {isEditing ? (
                     <textarea
                         className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
                         value={text}
@@ -489,18 +479,25 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                         onTouchEnd={(e) => e.stopPropagation()}
                         spellCheck="false"
                         autoFocus
+                        style={{ fontSize: 'medium', fontWeight: '450' }}
+                        onFocus={(e) => {
+                            const length = e.target.value.length;
+                            e.target.setSelectionRange(length, length);
+                        }}
                     />
                 ) : (
-                    <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
+                    <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`} style={{ fontSize: 'medium', fontWeight: '450' }}>
+                        {text}
+                    </div>
                 )}
                 {/* Add the resize hint */}
-                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30"
-                    style={{ pointerEvents: 'none' }}>
+                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="-5 -5 50 30"
+                    style={{ pointerEvents: 'none' }} transform="translate(-7, -7) scale(1.15)">
                     <path
-                        d="M 28 0 V 20 C 28 24 24 28 20 28 L 0 28"
+                        d="M 41 0 V 3 C 41 12 34 19 24 19 L 0 19"
                         fill="none"
                         stroke="white"
-                        strokeWidth="4"
+                        strokeWidth="7"
                         strokeLinecap="round"
                         style={{ pointerEvents: 'none' }}
                     />

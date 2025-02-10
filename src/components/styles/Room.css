@@ -3,7 +3,7 @@
     height: var(--center-section-height, 5760px);
     background-color: rgba(0, 0, 0, 0.1);
     position: absolute;
-    border-radius: 1.5ch;
+    border-radius: 2ch;
 }
 
 .date-labels {
