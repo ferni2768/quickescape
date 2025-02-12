@@ -120,7 +120,7 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
             }}
         >
             {text}
-            <div style={{ pointerEvents: 'none' }}>{icon}</div>
+            <div style={{ pointerEvents: 'none', display: 'flex', alignItems: 'bottom' }}>{icon}</div>
         </button>
     );
 });

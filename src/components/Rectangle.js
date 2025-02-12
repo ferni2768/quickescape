@@ -31,10 +31,11 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
         },
     });
     const xOffset = xOffsetSpring.xOffset;
-    const [overTrashcanProps, setOverTrashcanProps] = useSpring(() => ({
+    const [styleProps, setStyleProps] = useSpring(() => ({
         scale: 1,
         opacity: 1,
         backgroundColor: color,
+        boxShadow: '0 0 0px rgba(0, 0, 0, 0)',
         config: { tension: 2000, friction: 100 },
     }));
 
@@ -220,12 +221,32 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
-        if (isDragging && !isResizing && isOverTrashcan) {
-            setOverTrashcanProps.start({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
-        } else {
-            if (!rectangleState.deleting) setOverTrashcanProps.start({ scale: 1, opacity: 1, backgroundColor: color });
-        }
-    }, [isDragging, isResizing, isOverTrashcan, setOverTrashcanProps, rectangleState.deleting, color]);
+        const bigScale = 1.075;
+
+        const getScale = () => {
+            if (rectangleState.deleting) return 0.7;
+            if (isDragging && !isResizing) {
+                if (isOverTrashcan) return 0.8;
+                if (state === 1) return bigScale;
+            }
+            return 1;
+        };
+
+        const scale = getScale();
+
+        setStyleProps.start({
+            scale,
+            opacity: rectangleState.deleting ? 0 :
+                (isDragging && !isResizing && isOverTrashcan) ? 0.7 : 1,
+            backgroundColor: (isDragging && !isResizing && isOverTrashcan) ?
+                'rgba(255, 0, 0, 0.5)' : color,
+            boxShadow: (isDragging && !isOverTrashcan) ? '-7px 7px 20px rgba(0, 0, 0, 0.3)' : '0px 0px 0px rgba(0, 0, 0, 0)',
+            config: {
+                tension: (scale === bigScale && styleProps.scale.get() > 1) ? 1000 : 2000,
+                friction: 100
+            }
+        });
+    }, [isDragging, isResizing, isOverTrashcan, rectangleState.deleting, setStyleProps, color, state, styleProps.scale]);
 
     // Handle mouse/touch down/up for the rectangle
     useEffect(() => {
@@ -247,7 +268,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                     trashcan.classList.remove('deleting');
                     document.body.style.cursor = 'default';
                     setRectangleState((prev) => ({ ...prev, deleting: true }));
-                    setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
+                    setStyleProps.start({ scale: 0.7, opacity: 0 });
 
                     setTimeout(() => {
                         setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
@@ -419,97 +440,127 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
         const ghostY = Math.min(maxY, Math.max(0, snappedY));
 
         return (
-            <animated.div
-                className={`rectangle ${isSmallRectangle && !isNote ? "small" : ""} rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isNote ? 'note' : ''}`}
-                style={{
-                    transform: rectangleProps.x.to((x) => {
-                        const relativePos = getRelativePosition({
-                            x: rectangleProps.x.get(),
-                            y: rectangleProps.y.get(),
-                        });
-                        return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${overTrashcanProps.scale.get()})`;
-                    }),
-                    height: rectangleProps.height,
-                    pointerEvents: 'all',
-                    position: 'absolute',
-                    backgroundColor: overTrashcanProps.backgroundColor,
-                    zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
-                    visibility: isVisible ? 'visible' : 'hidden',
-                    opacity: overTrashcanProps.opacity,
-                    borderTopLeftRadius: isNote ? 0 : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
-                    borderTopRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
-                    borderBottomLeftRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
-                    borderBottomRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
-                }}
-            >
-                <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
-                    {!isNote && (
-                        <>
-                            {!isSmallRectangle ? (
-                                <>
-                                    {icon}
-                                    <div className='rectangle-header-text'>
-                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
-                                            `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
-                                            `${calculateDuration(rectangleState.height)}h`}
+            <>
+                <animated.div
+                    className={`rectangle-outline size-${rect.size}`}
+                    style={{
+                        transform: rectangleProps.x.to((x) => {
+                            const relativePos = getRelativePosition({
+                                x: rectangleProps.x.get(),
+                                y: rectangleProps.y.get(),
+                            });
+                            return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${styleProps.scale.get()})`;
+                        }),
+                        height: rectangleProps.height,
+                        width: rectangleWidth,
+                        outline: `3px solid rgba(36,47,54, 1)`,
+                        border: `1px solid ${color}`,
+                        borderTopLeftRadius: isNote ? 0 : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderTopRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomLeftRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        position: 'absolute',
+                        zIndex: isNote ? '98' : (isDragging ? '99' : '9'),
+                        opacity: styleProps.opacity,
+                        visibility: isVisible ? 'visible' : 'hidden',
+                        pointerEvents: 'none',
+                    }}
+                />
+
+                <animated.div
+                    className={`rectangle ${isSmallRectangle && !isNote ? "small" : ""} rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isNote ? 'note' : ''}`}
+                    style={{
+                        transform: rectangleProps.x.to((x) => {
+                            const relativePos = getRelativePosition({
+                                x: rectangleProps.x.get(),
+                                y: rectangleProps.y.get(),
+                            });
+                            return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${styleProps.scale.get()})`;
+                        }),
+                        height: rectangleProps.height,
+                        pointerEvents: 'all',
+                        position: 'absolute',
+                        backgroundColor: styleProps.backgroundColor,
+                        boxShadow: styleProps.boxShadow,
+                        zIndex: isNote ? '99' : (isDragging || isEditing ? '100' : '10'),
+                        visibility: isVisible ? 'visible' : 'hidden',
+                        opacity: styleProps.opacity,
+                        borderTopLeftRadius: isNote ? 0 : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderTopRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomLeftRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        outline: `3px solid rgba(36, 47, 54, ${(rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 || isOverTrashcan) ? 0 : 0.75})`,
+                    }}
+                >
+                    <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
+                        {!isNote && (
+                            <>
+                                {!isSmallRectangle ? (
+                                    <>
+                                        {icon}
+                                        <div className='rectangle-header-text'>
+                                            {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
+                                                `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
+                                                `${calculateDuration(rectangleState.height)}h`}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{ flexDirection: "column" }}>
+                                        <div className='rectangle-icon-small'>{icon}</div>
+                                        <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
+                                            {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
+                                                `${formatTime(gridPositionToTime(ghostY))}` :
+                                                `${calculateDuration(rectangleState.height)}h`}
+                                        </div>
                                     </div>
-                                </>
-                            ) : (
-                                <div style={{ flexDirection: "column" }}>
-                                    <div className='rectangle-icon-small'>{icon}</div>
-                                    <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
-                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
-                                            `${formatTime(gridPositionToTime(ghostY))}` :
-                                            `${calculateDuration(rectangleState.height)}h`}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-                {isEditing ? (
-                    <textarea
-                        className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        ref={textareaRef}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
-                        spellCheck="false"
-                        autoFocus
-                        style={{ fontSize: 'medium', fontWeight: '450' }}
-                        onFocus={(e) => {
-                            const length = e.target.value.length;
-                            e.target.setSelectionRange(length, length);
-                        }}
-                    />
-                ) : (
-                    <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`} style={{ fontSize: 'medium', fontWeight: '450' }}>
-                        {text}
+                                )}
+                            </>
+                        )}
                     </div>
-                )}
-                {/* Add the resize hint */}
-                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="-5 -5 50 30"
-                    style={{ pointerEvents: 'none' }} transform="translate(-7, -7) scale(1.15)">
-                    <path
-                        d="M 41 0 V 3 C 41 12 34 19 24 19 L 0 19"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="7"
-                        strokeLinecap="round"
-                        style={{ pointerEvents: 'none' }}
-                    />
-                </svg>
-            </animated.div>
+                    {isEditing ? (
+                        <textarea
+                            className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            ref={textareaRef}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            spellCheck="false"
+                            autoFocus
+                            style={{ fontSize: 'medium', fontWeight: isNote ? '600' : '450' }}
+                            onFocus={(e) => {
+                                const length = e.target.value.length;
+                                e.target.setSelectionRange(length, length);
+                            }}
+                        />
+                    ) : (
+                        <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`} style={{ fontSize: 'medium', fontWeight: isNote ? '600' : '450' }}>
+                            {text}
+                        </div>
+                    )}
+                    {/* Add the resize hint */}
+                    <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="-5 -5 50 30"
+                        style={{ pointerEvents: 'none' }} transform="translate(-10, -8) scale(1.3)">
+                        <path
+                            d="M 41 0 V 3 C 41 12 34 19 24 19 L 0 19"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="7"
+                            strokeLinecap="round"
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    </svg>
+                </animated.div>
+            </>
         );
     };
 
     return (
         <div>
-            {renderRectangle(!refresh)}
-            {renderRectangle(refresh)}
+            {renderRectangle(true)}
+            {/* {renderRectangle(!refresh)} */}
             {!isNote && isDragging && showGhost && !isOverTrashcan && (
                 <div className={`ghost size-${size}`}
                     style={{

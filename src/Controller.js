@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
-export const RECTANGLE_SIZES = { 1: 325, 2: 275, 3: 200 };
+export const RECTANGLE_SIZES = { 1: 375, 2: 275, 3: 200, 4: 150 };
 export const RECTANGLE_BORDER_RADIUS = '2ch';
 
 export const useController = () => {

@@ -14,6 +14,34 @@
     transition: border-radius 0.2s ease-in-out;
 }
 
+.rectangle-outline {
+    width: 150px;
+    height: auto;
+    background-color: transparent;
+    border-radius: 1.5ch;
+    padding: 1ch;
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform, opacity, border-radius;
+    cursor: grab;
+    overflow-wrap: anywhere;
+    transition: border-radius 0.2s ease-in-out;
+}
+
+.rectangle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right,
+            rgba(0, 0, 0, 0.2) 0%,
+            rgba(0, 0, 0, 0.01) 50%,
+            rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
+}
+
 .ghost {
     width: 150px;
     height: 50px;
@@ -59,7 +87,7 @@
 
 .rectangle.size-1,
 .ghost.size-1 {
-    width: 325px;
+    width: 375px;
 }
 
 .rectangle.size-2,
@@ -70,6 +98,11 @@
 .rectangle.size-3,
 .ghost.size-3 {
     width: 200px;
+}
+
+.rectangle.size-4,
+.ghost.size-4 {
+    width: 150px;
 }
 
 .rectangle.dragging {
@@ -199,7 +232,7 @@
     padding-top: 0.1rem;
     font-size: 1rem;
     font-weight: 600;
-    text-rendering: optimizeSpeed
+    text-rendering: optimizeLegibility;
 }
 
 .rectangle-icon-small {

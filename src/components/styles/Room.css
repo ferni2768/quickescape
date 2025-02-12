@@ -2,8 +2,22 @@
     width: 100px;
     height: var(--center-section-height, 5760px);
     background-color: rgba(0, 0, 0, 0.1);
+    border: 3px solid rgba(0, 0, 0, 0.1);
     position: absolute;
     border-radius: 2ch;
+}
+
+.center-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right,
+            rgba(0, 0, 0, 0.06) 0%,
+            rgba(0, 0, 0, 0.05) 50%,
+            rgba(255, 255, 255, 0.03) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
 }
 
 .date-labels {

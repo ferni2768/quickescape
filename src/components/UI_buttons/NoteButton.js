@@ -8,7 +8,7 @@ const NoteButton = memo(({ createRectangle, zoom, mouseFollowerRef }) => {
             key={0}
             id={0}
             text={'Note'}
-            color={'#e8ac15'}
+            color={'#F3BD1B'}
             size={2}
             createRectangle={createRectangle}
             zoom={zoom}

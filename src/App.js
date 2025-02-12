@@ -190,7 +190,7 @@ function App() {
       setActiveRectangle(rect.id);
 
       setRectangles(prevRectangles => {
-        const updated = prevRectangles.map(r => {
+        let updated = prevRectangles.map(r => {
           if (r.id === rect.id) return { ...r, border: 0, isDragging: true };
 
           // Check if it was a previous neighbor
@@ -206,6 +206,13 @@ function App() {
           }
           return r;
         });
+
+        // Move the active rectangle to the end to update the z-index
+        const currentRectIndex = updated.findIndex(r => r.id === rect.id);
+        if (currentRectIndex !== -1) {
+          const [currentRect] = updated.splice(currentRectIndex, 1);
+          updated.push(currentRect);
+        }
 
         return updated;
       });
