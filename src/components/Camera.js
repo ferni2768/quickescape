@@ -3,7 +3,7 @@ import { useSpring } from '@react-spring/web';
 import { useGlobalPinchZoom } from './useGlobalPinchZoom';
 
 export function Camera(getClientXY, locked) {
-    const [zoom, setZoom] = useState(1);
+    const [zoom, setZoom] = useState(0.75);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
     const centerSectionRef = useRef(null);
 
