@@ -13,6 +13,7 @@ import './components/styles/Room.css';
 const MemoizedUI = React.memo(UI, (prevProps, nextProps) => (
   prevProps.zoom === nextProps.zoom &&
   prevProps.locked === nextProps.locked &&
+  prevProps.visible === nextProps.visible &&
   prevProps.isOpen === nextProps.isOpen &&
   prevProps.activeRectangle === nextProps.activeRectangle &&
   prevProps.overTrashcanId === nextProps.overTrashcanId &&
@@ -26,7 +27,9 @@ const MemoizedRectangle = React.memo(Rectangle);
 function App() {
   const mouseFollowerRef = useRef(null);
   const appRef = useRef(null);
+  const buttonContainerRef = useRef();
   const [locked, setLocked] = useState(true);
+  const [visible, setVisible] = useState(true);
   const [overTrashcanId, setOverTrashcanId] = useState(null);
 
   const {
@@ -41,7 +44,7 @@ function App() {
     createRectangle
   } = useController();
 
-  const cameraDeps = useMemo(() => ({ getClientXY, locked }), [getClientXY, locked]);
+  const cameraDeps = useMemo(() => ({ getClientXY, locked, visible }), [getClientXY, locked, visible]);
   const {
     viewportState,
     centerSectionRef,
@@ -53,7 +56,7 @@ function App() {
     zoom,
     zooming,
     refresh
-  } = Camera(cameraDeps.getClientXY, cameraDeps.locked);
+  } = Camera(cameraDeps.getClientXY, cameraDeps.locked, cameraDeps.visible, buttonContainerRef);
 
   // Date range state
   const [isOpen, setIsOpen] = useState(false);
@@ -297,9 +300,12 @@ function App() {
   const uiProps = useMemo(() => ({
     createRectangle,
     mouseFollowerRef,
+    buttonContainerRef,
     zoom,
     locked,
     setLocked,
+    visible,
+    setVisible,
     activeRectangle,
     setOverTrashcanId,
     startDate: dateRange.start,
@@ -308,7 +314,7 @@ function App() {
     setEndDate,
     isOpen,
     setIsOpen
-  }), [createRectangle, zoom, locked, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setOverTrashcanId]);
+  }), [createRectangle, zoom, locked, visible, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId]);
 
 
   return (

@@ -2,10 +2,41 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSpring } from '@react-spring/web';
 import { useGlobalPinchZoom } from './useGlobalPinchZoom';
 
-export function Camera(getClientXY, locked) {
-    const [zoom, setZoom] = useState(0.75);
+// Helper function to calculate xOffset
+const calculateXOffset = (buttonsWidth, windowWidth, visible, zoom) => {
+    const minProportion = 0.2;
+    const minProportion_bigScreens = 0.15;
+    const proportion = buttonsWidth / windowWidth;
+
+    if (!visible || (proportion < minProportion && zoom <= 0.6) || proportion < minProportion_bigScreens)
+        return 0;
+
+    return Math.max(buttonsWidth * 1.25 - buttonsWidth * zoom, 0);
+};
+
+// Helper function to calculate initial zoom
+const calculateInitialZoom = (proportion) => {
+    const minProportion = 0.1;
+    const maxProportion = 0.3;
+    const minZoom = 0.4;
+    const maxZoom = 0.6;
+    const clampedProportion = Math.min(Math.max(proportion, minProportion), maxProportion);
+    return maxZoom - ((clampedProportion - minProportion) * (maxZoom - minZoom)) / (maxProportion - minProportion);
+};
+
+export function Camera(getClientXY, locked, visible, buttonContainerRef) {
+    const [zoom, setZoom] = useState(0.4);
+    const zoomRef = useRef(zoom);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
+    const [buttonsWidth, setButtonsWidth] = useState(0);
+    const buttonsWidthRef = useRef(buttonsWidth);
     const centerSectionRef = useRef(null);
+
+    // Update refs whenever state changes
+    useEffect(() => {
+        zoomRef.current = zoom;
+        buttonsWidthRef.current = buttonsWidth;
+    }, [zoom, buttonsWidth]);
 
     // For pinch to zoom
     const touchStartDistanceRef = useRef(null);
@@ -22,7 +53,7 @@ export function Camera(getClientXY, locked) {
 
     const [cameraPosition, setCameraPosition] = useState({
         x: -window.innerWidth / 2,
-        y: -window.innerHeight / 2,
+        y: 0,
     });
 
     const cameraProps = useSpring({
@@ -37,26 +68,64 @@ export function Camera(getClientXY, locked) {
 
     const { handleTouchMove, zooming } = useGlobalPinchZoom();
 
+    // Update camera position based on zoom and buttonsWidth
+    useEffect(() => {
+        if (!locked) return;
+        const windowWidth = window.innerWidth;
+        const xOffset = calculateXOffset(buttonsWidth, windowWidth, visible, zoom);
+        setCameraPosition(prev => ({
+            x: (-windowWidth / 2) - xOffset,
+            y: prev.y,
+        }));
+    }, [zoom, locked, visible, buttonsWidth]);
+
+    // Observe buttons' container width and set initial zoom and xOffset
+    useEffect(() => {
+        if (!buttonContainerRef?.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            const newWidth = entries[0].contentRect.width;
+            setButtonsWidth(newWidth);
+
+            const windowWidth = window.innerWidth;
+            const proportion = newWidth / windowWidth;
+
+            // Set initial zoom only once when the app starts
+            if (zoomRef.current === 0.4) {
+                const newZoom = calculateInitialZoom(proportion);
+                setZoom(newZoom);
+            }
+
+            // Calculate xOffset using refs for latest values
+            const xOffset = calculateXOffset(newWidth, windowWidth, visible, zoomRef.current);
+            setCameraPosition(prev => ({
+                ...prev,
+                x: (-windowWidth / 2) - xOffset,
+            }));
+        });
+
+        observer.observe(buttonContainerRef.current);
+        return () => observer.disconnect();
+    }, [buttonContainerRef, visible]);
+
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
         if (!locked || !centerSectionRef.current) return;
+
+        const windowWidth = window.innerWidth;
+        const xOffset = calculateXOffset(buttonsWidthRef.current, windowWidth, visible, zoomRef.current);
 
         const centerSectionTop = centerSectionRef.current.offsetTop - windowSize.height / 5;
         const centerSectionBottom = centerSectionTop + centerSectionRef.current.offsetHeight + windowSize.height / 5;
 
         setCameraPosition((prev) => ({
-            x: -windowSize.width / 2,
+            x: -windowWidth / 2 - xOffset,
             y: Math.min(
                 Math.max(prev.y, centerSectionTop - windowSize.height / 4),
                 centerSectionBottom - windowSize.height / 2
             ),
         }));
-    }, [locked, windowSize.height, windowSize.width]);
-
-    // Center the camera when locked is toggled
-    useEffect(() => {
-        if (locked) centerCamera();
-    }, [locked, centerCamera]);
+    }, [locked, visible, windowSize.height]);
 
     // Update window size on resize
     useEffect(() => {
@@ -65,6 +134,14 @@ export function Camera(getClientXY, locked) {
             const newHeight = window.innerHeight;
 
             setWindowSize({ width: newWidth, height: newHeight });
+
+            // Use refs for latest values
+            const xOffset = calculateXOffset(buttonsWidthRef.current, newWidth, visible, zoomRef.current);
+            setCameraPosition(prev => ({
+                x: (-newWidth / 2) - xOffset,
+                y: prev.y,
+            }));
+
             setIsCameraDragging(false);
             document.body.style.cursor = 'default';
 
@@ -77,7 +154,7 @@ export function Camera(getClientXY, locked) {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('orientationchange', handleResize);
         };
-    }, [centerCamera]);
+    }, [centerCamera, visible]);
 
     // Update camera position on mouse/touch move
     const handleMouseMoveCamera = useCallback((event) => {
@@ -150,15 +227,21 @@ export function Camera(getClientXY, locked) {
         touchMidpointRef.current = null;
         setRefresh((prev) => !prev);
 
-        // Spring back to limits on touch end
-        setZoom((prevZoom) => {
-            if (prevZoom < zoomLimits.min) return zoomLimits.min;
-            if (prevZoom > zoomLimits.max) return zoomLimits.max;
-            return prevZoom;
-        });
+        const clampedZoom = Math.max(zoomLimits.min, Math.min(zoom, zoomLimits.max));
+        setZoom(clampedZoom);
+
+        if (locked) {
+            // Apply xOffset with clamped zoom
+            const windowWidth = window.innerWidth;
+            const xOffset = calculateXOffset(buttonsWidthRef.current, windowWidth, visible, clampedZoom);
+            setCameraPosition(prev => ({
+                x: (-windowWidth / 2) - xOffset,
+                y: prev.y
+            }));
+        }
 
         centerCamera();
-    }, [zoomLimits.min, zoomLimits.max, centerCamera]);
+    }, [zoom, locked, visible, zoomLimits.min, zoomLimits.max, centerCamera]);
 
     // Handle zooming with ctrl button
     useEffect(() => {

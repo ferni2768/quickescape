@@ -114,7 +114,7 @@
 }
 
 .switch-buttons-container {
-    width: 10.8ch;
+    width: calc(auto + 4.5ch);
     box-sizing: border-box;
     background-color: #e3e3e3;
     border-top-right-radius: 10ch;
@@ -160,7 +160,7 @@
 }
 
 .rectangle-button {
-    font-size: calc(0.75vh + 1em);
+    font-size: clamp(1.1rem, 1vw + 1.5vh, 1.35rem);
     font-weight: 400;
     width: 13ch;
     background-color: #4CAF50;
@@ -243,8 +243,8 @@
 
 .switch-button {
     background-color: #41444B;
-    width: 2ch;
-    height: 2ch;
+    width: clamp(1.4rem, 1.15vw + 1.65svh, 1.7rem);
+    height: clamp(1.4rem, 1.15vw + 1.65vh, 1.7rem);
     border: none;
     color: white;
     text-align: center;
@@ -272,8 +272,8 @@
     background-color: #41444B;
     border: none;
     color: white;
-    width: calc(0.3vw + 3em);
-    height: calc(0.3vw + 3em);
+    width: clamp(2.1rem, 2.5vw + 2.5vh, 2.5rem);
+    height: clamp(2.1rem, 2.5vw + 2.5vh, 2.5rem);
     cursor: pointer;
     border-radius: 100%;
     display: flex;
@@ -325,8 +325,8 @@
     background-color: #cc1c1c;
     border: none;
     color: white;
-    width: calc(0.3vw + 3.5em);
-    height: calc(0.3vw + 3.5em);
+    width: clamp(2.9rem, 2.5vw + 2.5vh + 0.8rem, 3.5rem);
+    height: clamp(2.9rem, 2.5vw + 2.5vh + 0.8rem, 3.5rem);
     border-radius: 100%;
     display: flex;
     align-items: center;
@@ -344,27 +344,27 @@
 }
 
 .rectangle-button svg {
-    width: calc(0.75vh + 0.7em);
-    height: calc(0.75vh + 0.7em);
+    width: clamp(1.25rem, 1.1vw + 1.6vh, 1.55rem);
+    height: clamp(1.25rem, 1.1vw + 1.6vh, 1.55rem);
     margin-left: 0.3ch;
 }
 
 .view-button svg,
 .lock-button svg {
-    width: calc(0.3vw + 1.2em);
-    height: calc(0.3vw + 1.2em);
+    width: clamp(1.7rem, 2vw + 2vh, 2rem);
+    height: clamp(1.7rem, 2vw + 2vh, 2rem);
     z-index: 1;
 }
 
 .trashcan svg {
-    width: calc(0.3vw + 1.5em);
-    height: calc(0.3vw + 1.5em);
+    width: clamp(2.2rem, 2.5vw + 2.5vh, 2.65rem);
+    height: clamp(2.2rem, 2.5vw + 2.5vh, 2.65rem);
     z-index: 1;
 }
 
 .switch-button svg {
-    width: calc(0.75vh + 0.95ch);
-    height: calc(0.75vh + 0.95ch);
+    width: clamp(1.15rem, 1.1vw + 1.6vh, 1.45rem);
+    height: clamp(1.15rem, 1.1vw + 1.6vh, 1.45rem);
     z-index: 1;
 }
 

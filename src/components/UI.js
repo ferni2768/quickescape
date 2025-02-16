@@ -11,11 +11,10 @@ import {
 } from '@mui/icons-material';
 import './styles/Buttons.css';
 
-const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, startDate, endDate, setStartDate, setEndDate,
-    isOpen, setIsOpen, activeRectangle, setOverTrashcanId }) => {
+const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, visible, setVisible, startDate, endDate, setStartDate, setEndDate,
+    isOpen, setIsOpen, activeRectangle, setOverTrashcanId, buttonContainerRef }) => {
 
     const [activeGroup, setActiveGroup] = useState(2);
-    const [visible, setVisible] = useState(true);
     const [twoLines, setTwoLines] = useState(false);
     const [isLockTouched, setIsLockTouched] = useState(false);
     const [isViewTouched, setIsViewTouched] = useState(false);
@@ -41,7 +40,7 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
     const handleViewTouchEnd = useCallback(() => {
         setIsViewTouched(false);
         setVisible(!visible);
-    }, [visible]);
+    }, [visible, setVisible]);
 
     // Memoize buttonGroups
     const buttonGroups = useMemo(() => ({
@@ -74,7 +73,7 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                 </div>
 
                 <div className={`middle-left-container ${visible ? 'in' : 'out'}`}>
-                    <div className="UI rectangle-button-container">
+                    <div className="UI rectangle-button-container" ref={buttonContainerRef}>
                         {Object.entries(buttonGroups).map(([groupId, buttons]) => (
                             <div key={groupId} className="rectangle-buttons-group">
                                 {buttons.map(button => (
@@ -154,6 +153,8 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.mouseFollowerRef === nextProps.mouseFollowerRef &&
         prevProps.locked === nextProps.locked &&
         prevProps.setLocked === nextProps.setLocked &&
+        prevProps.visible === nextProps.visible &&
+        prevProps.setVisible === nextProps.setVisible &&
         isStartDateEqual &&
         isEndDateEqual &&
         prevProps.setStartDate === nextProps.setStartDate &&
