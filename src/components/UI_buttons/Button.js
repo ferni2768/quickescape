@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouseFollowerRef, icon, group, activeGroup }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
+    const [shouldRender, setShouldRender] = useState(false);
     const buttonRef = useRef(null);
     const hasExecutedRef = useRef(false);
     const startRef = useRef(0);
@@ -10,12 +11,46 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
     const resetButtonPosition = () => {
         const button = buttonRef.current;
         if (button) {
-            button.style.transform = 'translateX(-3ch)';
+            button.style.transform = 'translateX(-6ch)';
             button.classList.remove('rectangle-button-in', 'rectangle-button-out', 'no-animation');
             button.classList.add('no-animation');
         }
         setIsDragging(false);
     };
+
+    useEffect(() => {
+        if (group === activeGroup) {
+            setShouldRender(true);
+        } else if (shouldRender) {
+            const button = buttonRef.current;
+            const handleAnimationEnd = () => {
+                if (!button.classList.contains('rectangle-button-in'))
+                    setShouldRender(false);
+            };
+
+            button.addEventListener('animationend', handleAnimationEnd);
+            return () => button.removeEventListener('animationend', handleAnimationEnd);
+        }
+    }, [group, activeGroup, shouldRender]);
+
+    useEffect(() => {
+        const button = buttonRef.current;
+        if (!button) return;
+
+        const handleAnimationEnd = () => {
+            if (!button.classList.contains('rectangle-button-in'))
+                setShouldRender(false);
+        };
+
+        if (group === activeGroup)
+            setShouldRender(true);
+        else if (shouldRender)
+            button.addEventListener('animationend', handleAnimationEnd);
+
+        return () => {
+            button.removeEventListener('animationend', handleAnimationEnd);
+        };
+    }, [group, activeGroup, shouldRender]);
 
     const handleMouseDown = (e) => {
         if (group !== activeGroup && group !== 0) return;
@@ -42,12 +77,10 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
             hasExecutedRef.current = true;
             resetButtonPosition();
         } else {
-            const dampingFactor = Math.min(1, 0.5 + Math.pow(distanceMoved / (distanceToDrag * 3), 0.9));
-            const adjustedDistance = Math.max(0, distanceMoved * (1 - dampingFactor));
+            const dampingFactor = Math.min(0.8, 0.5 + Math.pow(distanceMoved / (distanceToDrag * 3), 0.9));
+            const adjustedDistance = Math.max(0, Math.min(distanceMoved, distanceMoved * (1 - dampingFactor)));
             const button = buttonRef.current;
-            if (button) {
-                button.style.transform = `translateX(calc(${adjustedDistance}px - 2ch))`;
-            }
+            if (button) button.style.transform = `translateX(calc(${adjustedDistance}px - 5ch))`;
         }
     }, [isDragging, startX, mouseFollowerRef, createRectangle, zoom, color, size, icon, group, handleMouseUp]);
 
@@ -85,8 +118,8 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
         } else {
             document.removeEventListener('mousemove', moveListener);
             document.removeEventListener('mouseup', upListener);
-            document.removeEventListener('touchmove', moveListener);
-            document.removeEventListener('touchend', upListener);
+            document.removeEventListener('touchmove', moveListener, { passive: false });
+            document.removeEventListener('touchend', upListener, { passive: false });
         }
 
         return () => {
@@ -104,18 +137,18 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
             id={`button-${id}`}
             className={`UI rectangle-button no-animation`}
             style={{
-                display: group !== activeGroup && group !== 0 && startRef.current < 2 ? 'none' : '', backgroundColor: color,
-                zIndex: group === activeGroup || group === 0 ? 100 : 90, width: group === 0 ? '12ch' : '13ch'
+                display: (!shouldRender && group !== 0) || (group !== activeGroup && group !== 0 && startRef.current < 2) ? 'none' : '', backgroundColor: color,
+                zIndex: group === activeGroup || group === 0 ? 100 : 90, width: group === 0 ? '15ch' : '16ch'
             }}
             onMouseDown={handleMouseDown}
-            onTouchStart={(e) => { handleMouseDown(e); buttonRef.current.style.transform = 'translateX(-2ch)'; }}
-            onMouseEnter={() => { buttonRef.current.style.transform = 'translateX(-2ch)'; }}
-            onMouseLeave={() => { buttonRef.current.style.transform = 'translateX(-3ch)'; }}
-            onTouchEnd={() => { buttonRef.current.style.transform = 'translateX(-3ch)'; }}
+            onTouchStart={(e) => { handleMouseDown(e); buttonRef.current.style.transform = 'translateX(-5ch)'; }}
+            onMouseEnter={() => { buttonRef.current.style.transform = 'translateX(-5ch)'; }}
+            onMouseLeave={() => { buttonRef.current.style.transform = 'translateX(-6ch)'; }}
+            onTouchEnd={() => { buttonRef.current.style.transform = 'translateX(-6ch)'; }}
             onAnimationEnd={() => {
                 if (group === activeGroup || group === 0) {
                     buttonRef.current.classList.add('no-animation');
-                    buttonRef.current.style.transform = 'translateX(-3ch)';
+                    buttonRef.current.style.transform = 'translateX(-6ch)';
                 }
             }}
         >

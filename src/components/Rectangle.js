@@ -43,7 +43,6 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
     const [startTime, setStartTime] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [text, setText] = useState("");
-    const [editDistance, setEditDistance] = useState(0);
     const textareaRef = useRef(null);
 
     // Animation parameters for rectangle position and size
@@ -100,7 +99,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                 return r;
             })
         );
-    }, [rectangleState.absolutePosition, rectangleState.absolutePosition.y, rectangleState.height, rect.id, rect.border, setRectangles]);
+    }, [rectangleState.absolutePosition.x, rectangleState.absolutePosition.y, rectangleState.height, rect.id, rect.border, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -159,7 +158,6 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                 }));
             }
         } else if (state === 1) {
-
             if (event.touches && event.touches.length > 1) {
                 setState(0);
                 return;
@@ -167,19 +165,14 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
 
             const { clientX, clientY } = getClientXY(event);
 
-            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
-            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
-
-            const newDistance = Math.sqrt(dx * dx + dy * dy) / 10;
-            if (Math.abs(newDistance - editDistance) > 0.5)
-                setEditDistance(newDistance);
-
             if (!isResizing) {
                 const newMousePosition = { x: clientX, y: clientY };
-                setPositionState((prev) => ({
-                    ...prev,
-                    mousePosition: newMousePosition,
-                }));
+                if (newMousePosition.x !== positionState.mousePosition.x || newMousePosition.y !== positionState.mousePosition.y) {
+                    setPositionState((prev) => ({
+                        ...prev,
+                        mousePosition: newMousePosition,
+                    }));
+                }
 
                 let newAbsolutePosition;
 
@@ -199,10 +192,10 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                 setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
             } else {
                 const newY = clientY - positionState.offset.y;
-                const newHeight = Math.max(gridSize * 2, Math.min(
+                const newHeight = Math.max(gridSize * 2, Math.min(gridSize * 4 * 24, Math.min(
                     centerSectionRef.current.offsetHeight - rectangleState.absolutePosition.y,
                     Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize
-                ));
+                )));
                 var canResize = true;
 
                 if (rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 && !isNote) {
@@ -217,7 +210,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, editDistance, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
+    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
@@ -255,10 +248,9 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
 
             setStartTime(performance.now());
-            setEditDistance(0);
         } else {
             if (dragged.current) {
-                if (!zooming && !justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
+                if (!zooming && !justCreated.current && !isResizing && performance.now() - startTime < 100)
                     setIsEditing(true);
 
                 setStartTime(null);
@@ -297,8 +289,8 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                     } else if (showGhost && overlapping) {
                         if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
                         else {
-                            const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
-                            setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                            const randomOffset = rectangleState.absolutePosition.x + rectangleWidth / 2 <= 0 ? (Math.random() * -150 - 150 - rectangleWidth) : (Math.random() * 150 + 150);
+                            setRectangleState((prev) => ({ ...prev, absolutePosition: { x: randomOffset, y: rectangleState.absolutePosition.y } }));
                         }
                     }
                 }

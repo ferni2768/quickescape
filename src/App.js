@@ -32,6 +32,13 @@ function App() {
   const [visible, setVisible] = useState(true);
   const [overTrashcanId, setOverTrashcanId] = useState(null);
 
+  // Date range state
+  const [isOpen, setIsOpen] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    start: new Date(),
+    end: dayjs().add(2, 'day').toDate()
+  });
+
   const {
     rectangles,
     setRectangles,
@@ -44,7 +51,7 @@ function App() {
     createRectangle
   } = useController();
 
-  const cameraDeps = useMemo(() => ({ getClientXY, locked, visible }), [getClientXY, locked, visible]);
+  const cameraDeps = useMemo(() => ({ getClientXY, locked, visible, isOpen }), [getClientXY, locked, visible, isOpen]);
   const {
     viewportState,
     centerSectionRef,
@@ -56,14 +63,7 @@ function App() {
     zoom,
     zooming,
     refresh
-  } = Camera(cameraDeps.getClientXY, cameraDeps.locked, cameraDeps.visible, buttonContainerRef);
-
-  // Date range state
-  const [isOpen, setIsOpen] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(),
-    end: dayjs().add(2, 'day').toDate()
-  });
+  } = Camera(cameraDeps.getClientXY, cameraDeps.locked, cameraDeps.visible, cameraDeps.isOpen, buttonContainerRef);
 
   // Memoized setStartDate and setEndDate
   const setStartDate = useCallback((date) => setDateRange(prev => ({ ...prev, start: date })), []);
@@ -97,8 +97,14 @@ function App() {
 
   // Function to check if rectangle has adjacent rectangles
   const checkAdjacentBorders = useCallback((targetRect) => {
-    if (targetRect.isNote) return;
+    const centerSectionStart = centerSectionRef.current.style.x - (RECTANGLE_SIZES[targetRect.size] + 100);
+    const centerSectionEnd = centerSectionRef.current.style.x + 100;
+
+    if (targetRect.isNote || !(targetRect.x > centerSectionStart && targetRect.x < centerSectionEnd))
+      return;
+
     setRectangles(prev => prev.map(rect => {
+      if (!isSnapped(rect) || rect.isNote) return rect;
       let newBorder = rect.border;
 
       const topNeighbor = prev.find(r =>
@@ -124,7 +130,7 @@ function App() {
 
       return newBorder !== rect.border ? { ...rect, border: newBorder } : rect;
     }));
-  }, [gridSize, setRectangles, isSnapped]);
+  }, [gridSize, setRectangles, isSnapped, centerSectionRef]);
 
   // Memoized move handler
   const handleMoveWrapper = useCallback((event) => {
@@ -196,16 +202,17 @@ function App() {
         let updated = prevRectangles.map(r => {
           if (r.id === rect.id) return { ...r, border: 0, isDragging: true };
 
-          // Check if it was a previous neighbor
-          const wasTopNeighbor = Math.abs(r.y + r.height - rect.y) < gridSize / 2;
-          const wasBottomNeighbor = Math.abs(rect.y + rect.height - r.y) < gridSize / 2;
+          // Only check neighbors if the active rectangle is snapped
+          if (isSnapped(rect)) {
+            const wasTopNeighbor = Math.abs(r.y + r.height - rect.y) < gridSize / 2;
+            const wasBottomNeighbor = Math.abs(rect.y + rect.height - r.y) < gridSize / 2;
 
-          // Clear neighbor borders if they were adjacent
-          if (!r.isNote && isSnapped(r)) {
-            let newBorder = r.border;
-            if (wasTopNeighbor) newBorder &= ~2;
-            if (wasBottomNeighbor) newBorder &= ~1;
-            return { ...r, border: newBorder };
+            if (!r.isNote && isSnapped(r)) {
+              let newBorder = r.border;
+              if (wasTopNeighbor) newBorder &= ~2;
+              if (wasBottomNeighbor) newBorder &= ~1;
+              return { ...r, border: newBorder };
+            }
           }
           return r;
         });
@@ -220,21 +227,21 @@ function App() {
         return updated;
       });
     } else {
-      const rect = rectangles.find(r => r.id === activeRectangle);
-      if (rect) {
-        setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: false })));
-        setTimeout(() => {
-          if (rect) {
-            const currentRect = rectangles.find(r => r.id === rect.id);
-            checkAdjacentBorders(currentRect);
-          }
-        }, 250);
+      setTimeout(() => {
+        setRectangles(prev => prev.map(rect => ({ ...rect, isDragging: false })));
         setActiveRectangle(null);
-      }
+      }, 10);
+
+      setTimeout(() => {
+        rectangles.forEach(rect => {
+          if (rect.isDragging)
+            checkAdjacentBorders(rect);
+        });
+      }, 250);
 
       if (!UI && !isOpen) handleMouseDownCamera(event);
     }
-  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped, activeRectangle, checkAdjacentBorders]);
+  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped, checkAdjacentBorders]);
 
   useEffect(() => {
     window.addEventListener('touchstart', handleDown, { passive: false });
@@ -263,7 +270,8 @@ function App() {
     setTimeout(() => {
       if (rect) {
         const currentRect = rectangles.find(r => r.id === rect.id);
-        checkAdjacentBorders(currentRect);
+        if (currentRect.isDragging)
+          checkAdjacentBorders(currentRect);
       }
     }, 250);
 

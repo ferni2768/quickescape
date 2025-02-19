@@ -114,20 +114,20 @@
 }
 
 .switch-buttons-container {
-    width: calc(auto + 4.5ch);
+    width: fit-content;
     box-sizing: border-box;
     background-color: #e3e3e3;
     border-top-right-radius: 10ch;
     border-bottom-right-radius: 10ch;
     padding: 0.1ch;
-    padding-left: 3.4ch;
+    padding-left: 6.4ch;
     padding-right: 0.1ch;
     margin-top: 1.5ch;
     pointer-events: none;
     font-size: calc(0.75vh + 1em);
     display: flex;
     flex-direction: row;
-    transform: translateX(-3ch);
+    transform: translateX(-6ch);
     outline: 2px solid rgba(36, 47, 54, 1);
     box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.3);
 }
@@ -151,23 +151,26 @@
     left: calc(2.3vh + 0.5rem);
     display: flex;
     flex-direction: row;
+    z-index: 999;
 }
 
 .bottom-right-container {
     position: absolute;
     bottom: calc(2.3vh + 0.5rem);
     right: calc(2.3vh + 0.5rem);
+    z-index: 999;
 }
 
 .rectangle-button {
     font-size: clamp(1.1rem, 1vw + 1.5vh, 1.35rem);
     font-weight: 400;
-    width: 13ch;
+    width: 16ch;
+    display: none;
     background-color: #4CAF50;
     border: none;
     color: white;
     padding: calc(0.2em);
-    padding-left: 4ch;
+    padding-left: 7ch;
     text-align: center;
     text-decoration: none;
     display: flex;
@@ -211,11 +214,11 @@
 
 @keyframes buttonOut {
     0% {
-        transform: translateX(-3ch);
+        transform: translateX(-6ch);
     }
 
     30% {
-        transform: translateX(-1ch);
+        transform: translateX(-4ch);
     }
 
     100% {
@@ -233,17 +236,17 @@
     }
 
     65% {
-        transform: translateX(-2ch);
+        transform: translateX(-5ch);
     }
 
     100% {
-        transform: translateX(-3ch);
+        transform: translateX(-6ch);
     }
 }
 
 .switch-button {
     background-color: #41444B;
-    width: clamp(1.4rem, 1.15vw + 1.65svh, 1.7rem);
+    width: clamp(1.4rem, 1.15vw + 1.65vh, 1.7rem);
     height: clamp(1.4rem, 1.15vw + 1.65vh, 1.7rem);
     border: none;
     color: white;
@@ -251,7 +254,7 @@
     text-decoration: none;
     display: inline-block;
     font: inherit;
-    margin: 0.2ch;
+    margin: clamp(0.1rem, 1.15vw + 1.65vh, 0.2rem);
     cursor: pointer;
     border-radius: 5ch;
     align-items: center;
@@ -363,8 +366,8 @@
 }
 
 .switch-button svg {
-    width: clamp(1.15rem, 1.1vw + 1.6vh, 1.45rem);
-    height: clamp(1.15rem, 1.1vw + 1.6vh, 1.45rem);
+    width: clamp(1.15rem, 1.15vw + 1.65vh - 0.25rem, 1.45rem);
+    height: clamp(1.15rem, 1.15vw + 1.65vh - 0.25rem, 1.45rem);
     z-index: 1;
 }
 

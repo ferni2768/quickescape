@@ -24,7 +24,7 @@ const calculateInitialZoom = (proportion) => {
     return maxZoom - ((clampedProportion - minProportion) * (maxZoom - minZoom)) / (maxProportion - minProportion);
 };
 
-export function Camera(getClientXY, locked, visible, buttonContainerRef) {
+export function Camera(getClientXY, locked, visible, isOpen, buttonContainerRef) {
     const [zoom, setZoom] = useState(0.4);
     const zoomRef = useRef(zoom);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
@@ -66,47 +66,12 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
         offset: { x: 0, y: 0 },
     });
 
-    const { handleTouchMove, zooming } = useGlobalPinchZoom();
+    const viewportState = useMemo(() => ({
+        windowSize,
+        cameraPosition,
+    }), [windowSize, cameraPosition]);
 
-    // Update camera position based on zoom and buttonsWidth
-    useEffect(() => {
-        if (!locked) return;
-        const windowWidth = window.innerWidth;
-        const xOffset = calculateXOffset(buttonsWidth, windowWidth, visible, zoom);
-        setCameraPosition(prev => ({
-            x: (-windowWidth / 2) - xOffset,
-            y: prev.y,
-        }));
-    }, [zoom, locked, visible, buttonsWidth]);
-
-    // Observe buttons' container width and set initial zoom and xOffset
-    useEffect(() => {
-        if (!buttonContainerRef?.current) return;
-
-        const observer = new ResizeObserver((entries) => {
-            const newWidth = entries[0].contentRect.width;
-            setButtonsWidth(newWidth);
-
-            const windowWidth = window.innerWidth;
-            const proportion = newWidth / windowWidth;
-
-            // Set initial zoom only once when the app starts
-            if (zoomRef.current === 0.4) {
-                const newZoom = calculateInitialZoom(proportion);
-                setZoom(newZoom);
-            }
-
-            // Calculate xOffset using refs for latest values
-            const xOffset = calculateXOffset(newWidth, windowWidth, visible, zoomRef.current);
-            setCameraPosition(prev => ({
-                ...prev,
-                x: (-windowWidth / 2) - xOffset,
-            }));
-        });
-
-        observer.observe(buttonContainerRef.current);
-        return () => observer.disconnect();
-    }, [buttonContainerRef, visible]);
+    const { handleTouchMove, zooming } = useGlobalPinchZoom(isOpen);
 
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
@@ -127,6 +92,35 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
         }));
     }, [locked, visible, windowSize.height]);
 
+    // Update camera position based on zoom and buttonsWidth
+    useEffect(() => {
+        centerCamera();
+    }, [zoom, locked, visible, buttonsWidth, centerCamera]);
+
+    // Observe buttons' container width and set initial zoom and xOffset
+    useEffect(() => {
+        if (!buttonContainerRef?.current) return;
+
+        const observer = new ResizeObserver((entries) => {
+            const newWidth = entries[0].contentRect.width;
+            setButtonsWidth(newWidth);
+
+            const windowWidth = window.innerWidth;
+            const proportion = newWidth / windowWidth;
+
+            // Set initial zoom only once when the app starts
+            if (zoomRef.current === 0.4) {
+                const newZoom = calculateInitialZoom(proportion);
+                setZoom(newZoom);
+            }
+
+            centerCamera();
+        });
+
+        observer.observe(buttonContainerRef.current);
+        return () => observer.disconnect();
+    }, [buttonContainerRef, visible, centerCamera]);
+
     // Update window size on resize
     useEffect(() => {
         const handleResize = () => {
@@ -134,14 +128,7 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
             const newHeight = window.innerHeight;
 
             setWindowSize({ width: newWidth, height: newHeight });
-
-            // Use refs for latest values
-            const xOffset = calculateXOffset(buttonsWidthRef.current, newWidth, visible, zoomRef.current);
-            setCameraPosition(prev => ({
-                x: (-newWidth / 2) - xOffset,
-                y: prev.y,
-            }));
-
+            centerCamera();
             setIsCameraDragging(false);
             document.body.style.cursor = 'default';
 
@@ -194,7 +181,7 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
     }, [zoomLimits.min, zoomLimits.max]);
 
     // Handle touch move events
-    const handleTouchMoveCamera = useCallback((event) => {
+    const handlePinchCamera = useCallback((event) => {
         const result = handleTouchMove(event);
         if (!result) return;
 
@@ -230,18 +217,8 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
         const clampedZoom = Math.max(zoomLimits.min, Math.min(zoom, zoomLimits.max));
         setZoom(clampedZoom);
 
-        if (locked) {
-            // Apply xOffset with clamped zoom
-            const windowWidth = window.innerWidth;
-            const xOffset = calculateXOffset(buttonsWidthRef.current, windowWidth, visible, clampedZoom);
-            setCameraPosition(prev => ({
-                x: (-windowWidth / 2) - xOffset,
-                y: prev.y
-            }));
-        }
-
-        centerCamera();
-    }, [zoom, locked, visible, zoomLimits.min, zoomLimits.max, centerCamera]);
+        if (locked) centerCamera();
+    }, [zoom, locked, zoomLimits.min, zoomLimits.max, centerCamera]);
 
     // Handle zooming with ctrl button
     useEffect(() => {
@@ -249,12 +226,12 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
             if (event.ctrlKey) {
                 if (event.key === '+' || event.key === '=') {
                     event.preventDefault();
-                    if (zoom < zoomLimits.max) {
+                    if (zoom < zoomLimits.max && !isOpen) {
                         handleZoom(0.1);
                     }
                 } else if (event.key === '-') {
                     event.preventDefault();
-                    if (zoom > zoomLimits.min) {
+                    if (zoom > zoomLimits.min && !isOpen) {
                         handleZoom(-0.1);
                     }
                 }
@@ -262,53 +239,21 @@ export function Camera(getClientXY, locked, visible, buttonContainerRef) {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleZoom, zoom, zoomLimits.min, zoomLimits.max]);
-
-    // Add event listeners for touch events
-    useEffect(() => {
-        const handleTouchStart = (event) => {
-            event.preventDefault();
-
-            if (event.touches.length === 2) {
-                const touch1 = event.touches[0];
-                const touch2 = event.touches[1];
-
-                const dx = touch2.clientX - touch1.clientX;
-                const dy = touch2.clientY - touch1.clientY;
-                const distance = Math.hypot(dx, dy);
-
-                const midpointX = (touch1.clientX + touch2.clientX) / 2;
-                const midpointY = (touch1.clientY + touch2.clientY) / 2;
-
-                touchStartDistanceRef.current = distance;
-                touchMidpointRef.current = { x: midpointX, y: midpointY };
-            }
-        };
-
-        window.addEventListener('touchstart', handleTouchStart, { passive: false });
-        window.addEventListener('touchmove', handleTouchMove, { passive: false });
-        window.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-        return () => {
-            window.removeEventListener('touchstart', handleTouchStart);
-            window.removeEventListener('touchmove', handleTouchMove);
-            window.removeEventListener('touchend', handleTouchEnd);
-        };
-    }, [handleTouchMove, handleTouchEnd]);
+    }, [handleZoom, zoom, zoomLimits.min, zoomLimits.max, isOpen]);
 
     // Set up touch move event listener
     useEffect(() => {
         const handleTouchMoveWrapper = (event) => {
-            if (event.touches && event.touches.length > 1) handleTouchMoveCamera(event);
+            if (event.touches && event.touches.length > 1) handlePinchCamera(event);
             else handleMouseMoveCamera(event);
         };
 
         window.addEventListener('touchmove', handleTouchMoveWrapper, { passive: false });
         return () => window.removeEventListener('touchmove', handleTouchMoveWrapper);
-    }, [handleTouchMoveCamera, handleMouseMoveCamera]);
+    }, [handlePinchCamera, handleMouseMoveCamera]);
 
     return {
-        viewportState: { windowSize, cameraPosition },
+        viewportState,
         centerSectionRef,
         handleMouseMoveCamera,
         handleMouseDownCamera,
