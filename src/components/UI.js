@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import Button from './UI_buttons/Button';
 import SwitchButton from './UI_buttons/SwitchButton';
 import Trashcan from './UI_buttons/Trashcan';
+import InfoButton from './UI_buttons/InfoButton';
 import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
 import NoteButton from './UI_buttons/NoteButton';
@@ -12,7 +13,7 @@ import {
 import './styles/Buttons.css';
 
 const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, visible, setVisible, startDate, endDate, setStartDate, setEndDate,
-    isOpen, setIsOpen, activeRectangle, setOverTrashcanId, buttonContainerRef }) => {
+    isOpen, setIsOpen, overlay, setOverlay, activeRectangle, setOverTrashcanId, buttonContainerRef }) => {
 
     const [activeGroup, setActiveGroup] = useState(2);
     const [twoLines, setTwoLines] = useState(false);
@@ -63,6 +64,70 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
         ],
     }), []);
 
+    const infoBoxes = useMemo(() => {
+
+        const P = 'calc(2.3vh + 0.5rem)';
+
+        const BLH = 'clamp(2.1rem, 2.5vw + 2.5vh, 2.5rem)';
+        const BLW = `calc(${BLH} * 2 + calc(0.3vw + 0.5em))`;
+
+        const BRD = 'clamp(2.9rem, 2.5vw + 2.5vh + 0.8rem, 3.5rem)';
+
+        const IBD = 'clamp(1.4rem, 2.5vw + 2.5vh - 0.5rem, 1.6rem)';
+
+        const MLB = 'calc(20vh + 1rem)';
+        const SBD = 'clamp(1.4rem, 1.15vw + 1.65vh, 1.7rem)';
+        const SBB = `calc(${MLB} + (${SBD} / 2) + 0.5ch)`;
+
+        const RBL = 'calc(clamp(1.1rem, 1vw + 1.5vh, 1.35rem) * 5.5)';
+        const RBH = 'clamp(1.1rem, 1vw + 1.5vh, 1.35rem)'
+        const RBB = `calc(${SBB} + 1.5ch + 20px + 21px + ((${RBH} + 0.4em) * 3.8))`;
+
+        const TLT = `calc(0.6rem + calc(0.3vw + 0.75em) + calc(25px + 2vw) + 0.3vw + 2.2em)`;
+
+        return [
+            {
+                text: "Switch between event groups",
+                placement: 'right',
+                left: `calc(${SBD} * 4)`,
+                bottom: SBB,
+            },
+            {
+                text: "Lock the camera or hide buttons",
+                placement: 'top',
+                subPlacement: 'right',
+                bottom: `calc(${P} + ${BLH})`,
+                left: `calc(${P} + (${BLW} / 2))`,
+            },
+            {
+                text: "Drag events here to delete",
+                placement: 'left',
+                bottom: `calc(${P} + (${BRD} / 2))`,
+                right: `calc(${P} + ${BRD} + 1.25rem)`,
+            },
+            {
+                class: `${twoLines ? 'two-lines' : ''}`,
+                text: "Change the name and dates of the trip",
+                placement: 'bottom',
+                subPlacement: 'right',
+                left: `${P}`,
+                top: `${TLT}`,
+            },
+            {
+                text: 'Zoom: Use Ctrl+/- or Pinch Gesture\n\nVersion: v0.1, by ferni2768',
+                placement: 'bottom',
+                subPlacement: 'left',
+                top: `calc(${P} + ${IBD} + 1.25rem)`,
+                right: `calc(${P} + (${IBD} / 2))`,
+            },
+            {
+                text: "Drag events to the timeline",
+                placement: 'right',
+                left: `calc(${RBL})`,
+                bottom: `calc(${RBB})`,
+            }
+        ];
+    }, [twoLines]);
 
     return (
         <div>
@@ -116,6 +181,10 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                 </div>
             </div>
 
+            <div className={`UI top-right-container ${isOpen ? 'hide' : ''}`}>
+                <InfoButton className="UI" setOverlay={setOverlay} infoBoxes={infoBoxes} />
+            </div>
+
             <div className="UI bottom-left-container">
                 <button
                     className={`UI lock-button ${locked ? '' : 'unlocked'} ${isLockTouched ? 'hover' : ''}`}
@@ -136,7 +205,7 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                 </button>
             </div>
 
-            <div className="UI bottom-right-container">
+            <div className="UI bottom-right-container" >
                 <Trashcan className="UI trashcan" activeRectangle={activeRectangle} setOverTrashcanId={setOverTrashcanId} />
             </div>
         </div>
@@ -161,6 +230,7 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.setEndDate === nextProps.setEndDate &&
         prevProps.isOpen === nextProps.isOpen &&
         prevProps.setIsOpen === nextProps.setIsOpen &&
+        prevProps.setOverlay === nextProps.setOverlay &&
         prevProps.activeRectangle === nextProps.activeRectangle &&
         prevProps.setOverTrashcanId === nextProps.setOverTrashcanId
     );

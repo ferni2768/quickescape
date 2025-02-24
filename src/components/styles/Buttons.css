@@ -10,6 +10,7 @@
     animation-duration: 0.4s;
     animation-fill-mode: forwards;
     width: 3ch;
+    z-index: 10002 !important;
     pointer-events: none;
     height: calc(1.2* (2*(25px + 2vw) + 2*(7.5px + 0.75vw)));
 }
@@ -143,6 +144,17 @@
     pointer-events: none;
     border-radius: inherit;
     mix-blend-mode: soft-light;
+}
+
+.top-right-container {
+    position: absolute;
+    z-index: 10002 !important;
+    top: calc(2.3vh + 0.5rem);
+    right: calc(2.3vh + 0.5rem);
+}
+
+.top-right-container.hide {
+    z-index: 999 !important;
 }
 
 .bottom-left-container {
@@ -287,6 +299,75 @@
     outline: 2px solid rgba(36, 47, 54, 1);
     position: relative;
     overflow: hidden;
+}
+
+.info-button {
+    background-color: rgba(36, 47, 54, 1);
+    width: clamp(1.4rem, 2.5vw + 2.5vh - 0.5rem, 1.6rem);
+    height: clamp(1.4rem, 2.5vw + 2.5vh - 0.5rem, 1.6rem);
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+    box-shadow: -3px 3px 4px rgba(0, 0, 0, 0.2);
+    outline: 2px solid rgba(36, 47, 54, 1);
+    position: relative;
+    overflow: hidden;
+    z-index: 9000;
+    will-change: transform;
+}
+
+.info-button-i {
+    font-weight: 700;
+    font-size: clamp(1.1rem, 2vw + 2vh, 1.3rem);
+    pointer-events: none;
+}
+
+.info-button:hover,
+.info-button.hover {
+    background-color: rgb(96, 109, 116);
+    transform: scale(1.1);
+    box-shadow: -4px 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.info-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
+    border-radius: 100%;
+    pointer-events: none;
+}
+
+.info-button.selected {
+    background-color: #69BC29;
+    z-index: 10002;
+    transform: scale(1.1);
+}
+
+.info-overlay {
+    position: fixed;
+    top: -50vh;
+    left: -50vw;
+    width: 200vw;
+    height: 200vh;
+    background-color: black;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease-in;
+    z-index: 10001;
+}
+
+.info-overlay.visible {
+    opacity: 0.5;
+    pointer-events: all;
 }
 
 .view-button::before,

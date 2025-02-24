@@ -1,12 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 
-export const useGlobalPinchZoom = (isOpen) => {
+export const useGlobalPinchZoom = (isOpen, overlay) => {
     const touchRef = useRef({ startDistance: null, initialMidpoint: null });
     const [zooming, setZooming] = useState(false);
 
     // Handle touch start events
     const handleTouchStart = useCallback((event) => {
-        if (isOpen) return;
+        if (isOpen || overlay) return;
         event.preventDefault();
 
         if (event.touches.length === 2) {
@@ -28,7 +28,7 @@ export const useGlobalPinchZoom = (isOpen) => {
                 },
             };
         }
-    }, [isOpen]);
+    }, [isOpen, overlay]);
 
     // Handle touch move events
     const handleTouchMove = useCallback((event) => {

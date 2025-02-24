@@ -15,6 +15,7 @@ const MemoizedUI = React.memo(UI, (prevProps, nextProps) => (
   prevProps.locked === nextProps.locked &&
   prevProps.visible === nextProps.visible &&
   prevProps.isOpen === nextProps.isOpen &&
+  prevProps.setOverlay === nextProps.setOver &&
   prevProps.activeRectangle === nextProps.activeRectangle &&
   prevProps.overTrashcanId === nextProps.overTrashcanId &&
   prevProps.startDate?.getTime() === nextProps.startDate?.getTime() &&
@@ -31,6 +32,7 @@ function App() {
   const [locked, setLocked] = useState(true);
   const [visible, setVisible] = useState(true);
   const [overTrashcanId, setOverTrashcanId] = useState(null);
+  const [overlay, setOverlay] = useState(false);
 
   // Date range state
   const [isOpen, setIsOpen] = useState(false);
@@ -51,7 +53,7 @@ function App() {
     createRectangle
   } = useController();
 
-  const cameraDeps = useMemo(() => ({ getClientXY, locked, visible, isOpen }), [getClientXY, locked, visible, isOpen]);
+  const cameraDeps = useMemo(() => ({ getClientXY, locked, visible, isOpen, overlay }), [getClientXY, locked, visible, isOpen, overlay]);
   const {
     viewportState,
     centerSectionRef,
@@ -63,7 +65,7 @@ function App() {
     zoom,
     zooming,
     refresh
-  } = Camera(cameraDeps.getClientXY, cameraDeps.locked, cameraDeps.visible, cameraDeps.isOpen, buttonContainerRef);
+  } = Camera(cameraDeps.getClientXY, cameraDeps.locked, cameraDeps.visible, cameraDeps.isOpen, cameraDeps.overlay, buttonContainerRef);
 
   // Memoized setStartDate and setEndDate
   const setStartDate = useCallback((date) => setDateRange(prev => ({ ...prev, start: date })), []);
@@ -239,9 +241,9 @@ function App() {
         });
       }, 250);
 
-      if (!UI && !isOpen) handleMouseDownCamera(event);
+      if (!UI && !isOpen && !overlay) handleMouseDownCamera(event);
     }
-  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped, checkAdjacentBorders]);
+  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, overlay, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped, checkAdjacentBorders]);
 
   useEffect(() => {
     window.addEventListener('touchstart', handleDown, { passive: false });
@@ -321,8 +323,9 @@ function App() {
     setStartDate,
     setEndDate,
     isOpen,
-    setIsOpen
-  }), [createRectangle, zoom, locked, visible, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId]);
+    setIsOpen,
+    setOverlay
+  }), [createRectangle, zoom, locked, visible, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId, setOverlay]);
 
 
   return (

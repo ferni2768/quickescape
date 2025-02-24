@@ -24,7 +24,7 @@ const calculateInitialZoom = (proportion) => {
     return maxZoom - ((clampedProportion - minProportion) * (maxZoom - minZoom)) / (maxProportion - minProportion);
 };
 
-export function Camera(getClientXY, locked, visible, isOpen, buttonContainerRef) {
+export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonContainerRef) {
     const [zoom, setZoom] = useState(0.4);
     const zoomRef = useRef(zoom);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
@@ -71,7 +71,7 @@ export function Camera(getClientXY, locked, visible, isOpen, buttonContainerRef)
         cameraPosition,
     }), [windowSize, cameraPosition]);
 
-    const { handleTouchMove, zooming } = useGlobalPinchZoom(isOpen);
+    const { handleTouchMove, zooming } = useGlobalPinchZoom(isOpen, overlay);
 
     // Center the camera in respect to the center section
     const centerCamera = useCallback(() => {
@@ -226,12 +226,12 @@ export function Camera(getClientXY, locked, visible, isOpen, buttonContainerRef)
             if (event.ctrlKey) {
                 if (event.key === '+' || event.key === '=') {
                     event.preventDefault();
-                    if (zoom < zoomLimits.max && !isOpen) {
+                    if (zoom < zoomLimits.max && !isOpen && !overlay) {
                         handleZoom(0.1);
                     }
                 } else if (event.key === '-') {
                     event.preventDefault();
-                    if (zoom > zoomLimits.min && !isOpen) {
+                    if (zoom > zoomLimits.min && !isOpen && !overlay) {
                         handleZoom(-0.1);
                     }
                 }
@@ -239,7 +239,7 @@ export function Camera(getClientXY, locked, visible, isOpen, buttonContainerRef)
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleZoom, zoom, zoomLimits.min, zoomLimits.max, isOpen]);
+    }, [handleZoom, zoom, zoomLimits.min, zoomLimits.max, isOpen, overlay]);
 
     // Set up touch move event listener
     useEffect(() => {
