@@ -18,6 +18,8 @@ const MemoizedUI = React.memo(UI, (prevProps, nextProps) => (
   prevProps.setOverlay === nextProps.setOver &&
   prevProps.activeRectangle === nextProps.activeRectangle &&
   prevProps.overTrashcanId === nextProps.overTrashcanId &&
+  prevProps.text === nextProps.text &&
+  prevProps.setText === nextProps.setText &&
   prevProps.startDate?.getTime() === nextProps.startDate?.getTime() &&
   prevProps.endDate?.getTime() === nextProps.endDate?.getTime()
 ));
@@ -29,17 +31,11 @@ function App() {
   const mouseFollowerRef = useRef(null);
   const appRef = useRef(null);
   const buttonContainerRef = useRef();
-  const [locked, setLocked] = useState(true);
   const [visible, setVisible] = useState(true);
   const [overTrashcanId, setOverTrashcanId] = useState(null);
   const [overlay, setOverlay] = useState(false);
-
-  // Date range state
   const [isOpen, setIsOpen] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(),
-    end: dayjs().add(2, 'day').toDate()
-  });
+  const [centerSectionReady, setCenterSectionReady] = useState(false);
 
   const {
     rectangles,
@@ -50,10 +46,19 @@ function App() {
     setAdjustedMousePosition,
     gridSize,
     getClientXY,
-    createRectangle
+    createRectangle,
+    zoom,
+    setZoom,
+    cameraPosition,
+    setCameraPosition,
+    locked,
+    setLocked,
+    text,
+    setText,
+    dateRange,
+    setDateRange
   } = useController();
 
-  const cameraDeps = useMemo(() => ({ getClientXY, locked, visible, isOpen, overlay }), [getClientXY, locked, visible, isOpen, overlay]);
   const {
     viewportState,
     centerSectionRef,
@@ -62,14 +67,13 @@ function App() {
     handleTouchEnd,
     cameraProps,
     zoomProps,
-    zoom,
     zooming,
     refresh
-  } = Camera(cameraDeps.getClientXY, cameraDeps.locked, cameraDeps.visible, cameraDeps.isOpen, cameraDeps.overlay, buttonContainerRef);
+  } = Camera(getClientXY, locked, visible, isOpen, overlay, zoom, setZoom, cameraPosition, setCameraPosition, buttonContainerRef);
 
   // Memoized setStartDate and setEndDate
-  const setStartDate = useCallback((date) => setDateRange(prev => ({ ...prev, start: date })), []);
-  const setEndDate = useCallback((date) => setDateRange(prev => ({ ...prev, end: date })), []);
+  const setStartDate = useCallback((date) => setDateRange(prev => ({ ...prev, start: date })), [setDateRange]);
+  const setEndDate = useCallback((date) => setDateRange(prev => ({ ...prev, end: date })), [setDateRange]);
 
   // Memoized app dimensions handler
   const setAppDimensions = useCallback(() => {
@@ -91,6 +95,10 @@ function App() {
       window.removeEventListener('orientationchange', handleResizeOrOrientationChange);
     };
   }, [setAppDimensions]);
+
+  useEffect(() => {
+    if (centerSectionRef.current) setCenterSectionReady(true);
+  }, [centerSectionRef]);
 
   // Function to check if rectangle is snapped
   const isSnapped = useCallback((rect) => {
@@ -318,6 +326,8 @@ function App() {
     setVisible,
     activeRectangle,
     setOverTrashcanId,
+    text,
+    setText,
     startDate: dateRange.start,
     endDate: dateRange.end,
     setStartDate,
@@ -325,7 +335,7 @@ function App() {
     isOpen,
     setIsOpen,
     setOverlay
-  }), [createRectangle, zoom, locked, visible, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId, setOverlay]);
+  }), [createRectangle, zoom, locked, visible, isOpen, text, dateRange.start, dateRange.end, activeRectangle, setText, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId, setOverlay]);
 
 
   return (
@@ -361,7 +371,7 @@ function App() {
             }}
           />
 
-          {rectangles.map((rect) => (
+          {centerSectionReady && rectangles.map((rect) => (
             <MemoizedRectangle
               key={rect.id}
               viewportState={viewportState}
@@ -382,6 +392,7 @@ function App() {
               isNote={rect.isNote}
               refresh={refresh}
               isOverTrashcan={overTrashcanId === rect.id}
+              initialText={rect.text}
             />
           ))}
 

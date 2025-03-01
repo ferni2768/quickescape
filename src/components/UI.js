@@ -6,14 +6,11 @@ import InfoButton from './UI_buttons/InfoButton';
 import BigTextEditor from './UI_buttons/BigTextEditor';
 import DateRangePicker from './UI_buttons/DateRangePicker';
 import NoteButton from './UI_buttons/NoteButton';
-import {
-    LocationOn, Flight, DirectionsCar, DirectionsBus, Train, LocalDining, AccountBalance, ShoppingBag, Nightlife, Hotel, AccessTimeFilled,
-    Lock, LockOpen, Visibility, VisibilityOff
-} from '@mui/icons-material';
+import { ICON_MAP } from '../Controller';
 import './styles/Buttons.css';
 
-const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, visible, setVisible, startDate, endDate, setStartDate, setEndDate,
-    isOpen, setIsOpen, overlay, setOverlay, activeRectangle, setOverTrashcanId, buttonContainerRef }) => {
+const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, visible, setVisible, text, setText, startDate, endDate, setStartDate, setEndDate,
+    isOpen, setIsOpen, setOverlay, activeRectangle, setOverTrashcanId, buttonContainerRef }) => {
 
     const [activeGroup, setActiveGroup] = useState(2);
     const [twoLines, setTwoLines] = useState(false);
@@ -21,8 +18,16 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
     const [isViewTouched, setIsViewTouched] = useState(false);
 
     // Memoize SVG icons
-    const lockIcon = useMemo(() => locked ? <Lock style={{ pointerEvents: 'none' }} /> : <LockOpen style={{ pointerEvents: 'none' }} />, [locked]);
-    const visibilityIcon = useMemo(() => visible ? <Visibility style={{ pointerEvents: 'none' }} /> : <VisibilityOff style={{ pointerEvents: 'none' }} />, [visible]);
+    const lockIcon = useMemo(() => locked ? ICON_MAP['lock'] : ICON_MAP['lockOpen'], [locked]);
+    const visibilityIcon = useMemo(() => visible ? ICON_MAP['visibility'] : ICON_MAP['visibilityOff'], [visible]);
+
+    // Memoize InfoButton
+    const MemoizedInfoButton = React.memo(InfoButton, (prevProps, nextProps) => {
+        return (
+            prevProps.setOverlay === nextProps.setOverlay &&
+            prevProps.infoBoxes === nextProps.infoBoxes
+        );
+    });
 
     // Memoize event handlers
     const handleLockTouchStart = useCallback(() => {
@@ -46,21 +51,21 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
     // Memoize buttonGroups
     const buttonGroups = useMemo(() => ({
         1: [
-            { id: 1, text: 'Plane', color: '#1D333A', size: 1, icon: <Flight />, group: 1 },
-            { id: 2, text: 'Train', color: '#1D333A', size: 1, icon: <Train />, group: 1 },
-            { id: 3, text: 'Bus', color: '#1D333A', size: 1, icon: <DirectionsBus />, group: 1 },
-            { id: 4, text: 'Car', color: '#1D333A', size: 1, icon: <DirectionsCar />, group: 1 },
+            { id: 1, text: 'Plane', colorId: 'travel-dark', size: 1, iconId: 'flight', group: 1 },
+            { id: 2, text: 'Train', colorId: 'travel-dark', size: 1, iconId: 'train', group: 1 },
+            { id: 3, text: 'Bus', colorId: 'travel-dark', size: 1, iconId: 'bus', group: 1 },
+            { id: 4, text: 'Car', colorId: 'travel-dark', size: 1, iconId: 'car', group: 1 },
         ],
         2: [
-            { id: 5, text: 'Tour', color: '#DD3131', size: 2, icon: <LocationOn />, group: 2 },
-            { id: 6, text: 'Culture', color: '#814822', size: 2, icon: <AccountBalance />, group: 2 },
-            { id: 7, text: 'Shop', color: '#69BC29', size: 2, icon: <ShoppingBag />, group: 2 },
-            { id: 8, text: 'Party', color: '#3892C7', size: 2, icon: <Nightlife />, group: 2 }
+            { id: 5, text: 'Tour', colorId: 'activity-red', size: 2, iconId: 'location', group: 2 },
+            { id: 6, text: 'Culture', colorId: 'activity-brown', size: 2, iconId: 'culture', group: 2 },
+            { id: 7, text: 'Shop', colorId: 'activity-green', size: 2, iconId: 'shopping', group: 2 },
+            { id: 8, text: 'Party', colorId: 'activity-blue', size: 2, iconId: 'party', group: 2 }
         ],
         3: [
-            { id: 9, text: 'Hotel', color: '#A84355 ', size: 4, icon: <Hotel />, group: 3 },
-            { id: 10, text: 'Eat', color: '#FF8C00 ', size: 3, icon: <LocalDining />, group: 3 },
-            { id: 11, text: 'Free', color: '#98A6AB', size: 4, icon: <AccessTimeFilled />, group: 3 },
+            { id: 9, text: 'Hotel', colorId: 'hotel-pink', size: 4, iconId: 'hotel', group: 3 },
+            { id: 10, text: 'Eat', colorId: 'dining-orange', size: 3, iconId: 'dining', group: 3 },
+            { id: 11, text: 'Free', colorId: 'free-gray', size: 4, iconId: 'time', group: 3 },
         ],
     }), []);
 
@@ -129,11 +134,12 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
         ];
     }, [twoLines]);
 
+
     return (
         <div>
             <div>
                 <div className={`UI top-left-container ${visible ? 'in' : 'out'}`}>
-                    <BigTextEditor className="UI" setTwoLines={setTwoLines} />
+                    <BigTextEditor className="UI" text={text} setText={setText} setTwoLines={setTwoLines} />
                     <DateRangePicker className="UI" startDate={startDate} endDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} isOpen={isOpen} setIsOpen={setIsOpen} twoLines={twoLines} />
                 </div>
 
@@ -146,12 +152,12 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                                         key={button.id}
                                         id={button.id}
                                         text={button.text}
-                                        color={button.color}
+                                        colorId={button.colorId}
                                         size={button.size}
                                         createRectangle={createRectangle}
                                         zoom={zoom}
                                         mouseFollowerRef={mouseFollowerRef}
-                                        icon={button.icon}
+                                        iconId={button.iconId}
                                         group={button.group}
                                         activeGroup={activeGroup}
                                     />
@@ -182,7 +188,7 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
             </div>
 
             <div className={`UI top-right-container ${isOpen ? 'hide' : ''}`}>
-                <InfoButton className="UI" setOverlay={setOverlay} infoBoxes={infoBoxes} />
+                <MemoizedInfoButton className="UI" setOverlay={setOverlay} infoBoxes={infoBoxes} />
             </div>
 
             <div className="UI bottom-left-container">
@@ -226,6 +232,8 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.setVisible === nextProps.setVisible &&
         isStartDateEqual &&
         isEndDateEqual &&
+        prevProps.text === nextProps.text &&
+        prevProps.setText === nextProps.setText &&
         prevProps.setStartDate === nextProps.setStartDate &&
         prevProps.setEndDate === nextProps.setEndDate &&
         prevProps.isOpen === nextProps.isOpen &&

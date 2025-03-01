@@ -24,8 +24,7 @@ const calculateInitialZoom = (proportion) => {
     return maxZoom - ((clampedProportion - minProportion) * (maxZoom - minZoom)) / (maxProportion - minProportion);
 };
 
-export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonContainerRef) {
-    const [zoom, setZoom] = useState(0.4);
+export function Camera(getClientXY, locked, visible, isOpen, overlay, zoom, setZoom, cameraPosition, setCameraPosition, buttonContainerRef) {
     const zoomRef = useRef(zoom);
     const [isCameraDragging, setIsCameraDragging] = useState(false);
     const [buttonsWidth, setButtonsWidth] = useState(0);
@@ -49,11 +48,6 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
     const [windowSize, setWindowSize] = useState({
         width: window.innerWidth,
         height: window.innerHeight,
-    });
-
-    const [cameraPosition, setCameraPosition] = useState({
-        x: -window.innerWidth / 2,
-        y: 0,
     });
 
     const cameraProps = useSpring({
@@ -90,7 +84,7 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
                 centerSectionBottom - windowSize.height / 2
             ),
         }));
-    }, [locked, visible, windowSize.height]);
+    }, [locked, visible, windowSize.height, setCameraPosition]);
 
     // Update camera position based on zoom and buttonsWidth
     useEffect(() => {
@@ -119,7 +113,7 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
 
         observer.observe(buttonContainerRef.current);
         return () => observer.disconnect();
-    }, [buttonContainerRef, visible, centerCamera]);
+    }, [buttonContainerRef, visible, centerCamera, setZoom]);
 
     // Update window size on resize
     useEffect(() => {
@@ -160,7 +154,7 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
                 offset: { x: clientX, y: clientY },
             }));
         }
-    }, [isCameraDragging, getClientXY, positionState.offset.x, positionState.offset.y, zoom, cameraPosition]);
+    }, [isCameraDragging, getClientXY, positionState.offset.x, positionState.offset.y, zoom, cameraPosition, setCameraPosition]);
 
     // Handle mouse/touch down to start dragging the camera
     const handleMouseDownCamera = useCallback((event) => {
@@ -178,7 +172,7 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
     const handleZoom = useCallback((delta) => {
         setZoom((prevZoom) => Math.max(zoomLimits.min, Math.min(prevZoom + delta, zoomLimits.max)));
         setRefresh((prev) => !prev);
-    }, [zoomLimits.min, zoomLimits.max]);
+    }, [zoomLimits.min, zoomLimits.max, setZoom]);
 
     // Handle touch move events
     const handlePinchCamera = useCallback((event) => {
@@ -205,7 +199,7 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
         }
 
         event.preventDefault();
-    }, [zoom, handleTouchMove]);
+    }, [zoom, handleTouchMove, setCameraPosition, setZoom]);
 
     // Handle touch end to stop pinch to zoom
     const handleTouchEnd = useCallback(() => {
@@ -218,7 +212,7 @@ export function Camera(getClientXY, locked, visible, isOpen, overlay, buttonCont
         setZoom(clampedZoom);
 
         if (locked) centerCamera();
-    }, [zoom, locked, zoomLimits.min, zoomLimits.max, centerCamera]);
+    }, [zoom, locked, zoomLimits.min, zoomLimits.max, centerCamera, setZoom]);
 
     // Handle zooming with ctrl button
     useEffect(() => {

@@ -2,10 +2,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated, easings } from '@react-spring/web';
 import { RECTANGLE_SIZES } from '../Controller';
 import { RECTANGLE_BORDER_RADIUS } from '../Controller';
+import { COLOR_MAP, ICON_MAP } from '../Controller';
 import './styles/Rectangle.css';
 
 const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
-    rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote, isOverTrashcan }) => {
+    rectangles, setRectangles, getClientXY, isDragging, size, isNote, isOverTrashcan }) => {
+
+    const color = COLOR_MAP[rect.colorId];
+    const icon = ICON_MAP[rect.iconId];
 
     // State object with state variables
     const [rectangleState, setRectangleState] = useState({
@@ -20,10 +24,17 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
     const [isResizing, setIsResizing] = useState(false);
     const [showGhost, setShowGhost] = useState(false);
     const rectangleWidth = RECTANGLE_SIZES[size];
-    const justCreated = useRef(true);
-    const dragged = useRef(false);
+    const dragged = useRef(rect.loadedFromStorage);
+    const justCreated = useRef(!rect.loadedFromStorage);
+
+    // State variables for rectangle text editing
+    const [startTime, setStartTime] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [text, setText] = useState(rect.text || "");
+    const textareaRef = useRef(null);
+
     const xOffsetSpring = useSpring({
-        from: { xOffset: (viewportState.windowSize.width) / zoom },
+        from: { xOffset: justCreated.current ? (viewportState.windowSize.width) / zoom : 0 },
         to: { xOffset: 0 },
         config: {
             duration: 300,
@@ -39,11 +50,25 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
         config: { tension: 2000, friction: 100 },
     }));
 
-    // State variables for rectangle text editing
-    const [startTime, setStartTime] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [text, setText] = useState("");
-    const textareaRef = useRef(null);
+    // Update rectangle data when text changes
+    useEffect(() => {
+        if (text !== undefined) {
+            setRectangles((prevRectangles) =>
+                prevRectangles.map((r) => {
+                    if (r.id === rect.id) {
+                        return { ...r, text };
+                    }
+                    return r;
+                })
+            );
+        }
+    }, [text, rect.id, setRectangles]);
+
+    // Initialize text from rect.text if available
+    useEffect(() => {
+        if (rect.text !== undefined && rect.text !== null)
+            setText(rect.text);
+    }, [rect.text]);
 
     // Animation parameters for rectangle position and size
     const mass = 0.3 * (1 + zoom / 2) + (rectangleState.height * rectangleWidth) / 10;

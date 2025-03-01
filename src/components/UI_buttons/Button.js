@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ICON_MAP, COLOR_MAP } from '../../Controller';
 
-const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouseFollowerRef, icon, group, activeGroup }) => {
+const Button = React.memo(({ id, text, colorId, size, createRectangle, zoom, mouseFollowerRef, iconId, group, activeGroup }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
     const [shouldRender, setShouldRender] = useState(false);
     const buttonRef = useRef(null);
     const hasExecutedRef = useRef(false);
     const startRef = useRef(0);
+    const icon = ICON_MAP[iconId];
 
     const resetButtonPosition = () => {
         const button = buttonRef.current;
@@ -73,7 +75,7 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
 
         if (distanceMoved >= distanceToDrag) {
             const { offsetLeft, offsetTop } = mouseFollowerRef.current;
-            createRectangle(offsetLeft / zoom, offsetTop / zoom, 80, color, size, icon, group);
+            createRectangle(offsetLeft / zoom, offsetTop / zoom, 80, colorId, size, iconId, group);
             hasExecutedRef.current = true;
             resetButtonPosition();
         } else {
@@ -82,7 +84,7 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
             const button = buttonRef.current;
             if (button) button.style.transform = `translateX(calc(${adjustedDistance}px - 5ch))`;
         }
-    }, [isDragging, startX, mouseFollowerRef, createRectangle, zoom, color, size, icon, group, handleMouseUp]);
+    }, [isDragging, startX, mouseFollowerRef, createRectangle, zoom, colorId, size, iconId, group, handleMouseUp]);
 
     // Animate the button when the active group changes
     useEffect(() => {
@@ -137,8 +139,10 @@ const Button = React.memo(({ id, text, color, size, createRectangle, zoom, mouse
             id={`button-${id}`}
             className={`UI rectangle-button no-animation`}
             style={{
-                display: (!shouldRender && group !== 0) || (group !== activeGroup && group !== 0 && startRef.current < 2) ? 'none' : '', backgroundColor: color,
-                zIndex: group === activeGroup || group === 0 ? 100 : 90, width: group === 0 ? '15ch' : '16ch'
+                display: (!shouldRender && group !== 0) || (group !== activeGroup && group !== 0 && startRef.current < 2) ? 'none' : '',
+                backgroundColor: COLOR_MAP[colorId],
+                zIndex: group === activeGroup || group === 0 ? 100 : 90,
+                width: group === 0 ? '15ch' : '16ch'
             }}
             onMouseDown={handleMouseDown}
             onTouchStart={(e) => { handleMouseDown(e); buttonRef.current.style.transform = 'translateX(-5ch)'; }}
@@ -164,8 +168,10 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.id === nextProps.id &&
         prevProps.text === nextProps.text &&
         prevProps.color === nextProps.color &&
+        prevProps.colorId === nextProps.colorId &&
         prevProps.size === nextProps.size &&
         prevProps.zoom === nextProps.zoom &&
+        prevProps.iconId === nextProps.iconId &&
         prevProps.group === nextProps.group &&
         prevProps.activeGroup === nextProps.activeGroup
     );
