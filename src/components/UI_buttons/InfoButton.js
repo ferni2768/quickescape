@@ -27,6 +27,23 @@ const InfoButton = React.forwardRef(({ setOverlay, infoBoxes }, ref) => {
         setTimeout(() => { setOverlay(false); }, 200);
     }, [setOverlay]);
 
+    // Hnadle link interactions
+    const handleLinkActivation = useCallback((e, url) => {
+        e.stopPropagation();
+
+        // Create an actual anchor element and trigger it programmatically
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+
+        // Real link click to the browser
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        e.preventDefault();
+    }, []);
+
     return (
         <>
             <button
@@ -56,6 +73,15 @@ const InfoButton = React.forwardRef(({ setOverlay, infoBoxes }, ref) => {
                     >
                         <div className="info-text-box-content">
                             {box.text}
+                            {box.link && (
+                                <span
+                                    className={`info-link ${isSelected ? 'visible' : ''}`}
+                                    onClick={(e) => handleLinkActivation(e, box.link.url)}
+                                    onTouchStart={(e) => handleLinkActivation(e, box.link.url)}
+                                >
+                                    {box.link.text}
+                                </span>
+                            )}
                         </div>
                     </div>
                 );

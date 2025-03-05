@@ -119,7 +119,11 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                 top: `${TLT}`,
             },
             {
-                text: 'Zoom: Use Ctrl+/- or Pinch Gesture\n\nVersion: v0.1, by ferni2768',
+                text: 'Zoom: Use Ctrl+/- or Pinch Gesture\n\nVersion:  ',
+                link: {
+                    text: 'v0.1 by ferni2768',
+                    url: 'https://github.com/ferni2768/quickescape'
+                },
                 placement: 'bottom',
                 subPlacement: 'left',
                 top: `calc(${P} + ${IBD} + 1.25rem)`,

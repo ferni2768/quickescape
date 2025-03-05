@@ -127,6 +127,24 @@
     white-space: pre-line;
 }
 
+.info-link {
+    color: #0066cc;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.info-link.visible {
+    pointer-events: all;
+}
+
+.info-link:hover {
+    text-decoration: underline;
+}
+
+.info-link:active {
+    color: #004499;
+}
+
 /* ==================== */
 /* Info Text Box Arrows */
 /* ==================== */
