@@ -1,13 +1,62 @@
 import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { Delete, DeleteOutline } from '@mui/icons-material';
 
-const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
+const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId, clearData }) => {
     const trashcanRef = useRef(null);
     const [deleting, setDeleting] = useState(false);
+    const [pressing, setPressing] = useState(false);
+    const timerRef = useRef(null);
 
     // Memoize SVG icons
     const deleteIcon = useMemo(() => <Delete style={{ pointerEvents: 'none' }} />, []);
     const deleteOutlineIcon = useMemo(() => <DeleteOutline style={{ pointerEvents: 'none' }} />, []);
+
+    // Start the long press timer
+    const startLongPressTimer = useCallback(() => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setPressing(true);
+
+        timerRef.current = setTimeout(() => {
+            if (clearData) {
+                clearData();
+                setDeleting(true);
+
+                setTimeout(() => {
+                    setPressing(false);
+                    setDeleting(false);
+                }, 500);
+            }
+        }, 3000);
+    }, [clearData]);
+
+    // Clear the timer when press is released
+    const clearLongPressTimer = useCallback(() => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        setPressing(false);
+    }, []);
+
+    // Handle mouse down event
+    const handleMouseDown = useCallback((e) => {
+        if (e.button === 0) startLongPressTimer();
+    }, [startLongPressTimer]);
+
+    // Handle mouse up event
+    const handleMouseUp = useCallback(() => {
+        clearLongPressTimer();
+    }, [clearLongPressTimer]);
+
+    // Handle touch start event
+    const handleTouchStart = useCallback(() => {
+        startLongPressTimer();
+    }, [startLongPressTimer]);
+
+    // Handle touch end event
+    const handleTouchEnd = useCallback(() => {
+        clearLongPressTimer();
+    }, [clearLongPressTimer]);
 
     // Handle hover enter
     const handleEnter = useCallback((e) => {
@@ -19,10 +68,11 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     const handleLeave = useCallback(() => {
         setOverTrashcanId(null);
         setDeleting(false);
+        clearLongPressTimer();
         if (trashcanRef.current) {
             trashcanRef.current.classList.remove('deleting');
         }
-    }, [setOverTrashcanId]);
+    }, [setOverTrashcanId, clearLongPressTimer]);
 
     // Handle touch movement detection
     const handleTouchMove = useCallback((event) => {
@@ -43,6 +93,11 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
             }
         }
     }, [activeRectangle, setOverTrashcanId, handleLeave]);
+
+    // Clean up timer on unmount
+    useEffect(() => {
+        return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    }, []);
 
     // Track class changes for deletion animation
     useEffect(() => {
@@ -70,12 +125,14 @@ const Trashcan = React.memo(({ activeRectangle, setOverTrashcanId }) => {
     return (
         <div
             ref={trashcanRef}
-            className="UI trashcan"
+            className={`UI trashcan ${pressing ? 'pressing' : ''}`}
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
-            onTouchStart={handleEnter}
-            onTouchEnd={handleLeave}
+            onTouchStart={(e) => { handleEnter(e); handleTouchStart(); }}
+            onTouchEnd={handleTouchEnd}
             onTouchCancel={handleLeave}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
         >
             {deleting ? deleteOutlineIcon : deleteIcon}
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import DatePicker from 'react-datepicker';
 import dayjs from 'dayjs';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -14,8 +14,6 @@ const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, is
         setTempStartDate(startDate);
         setTempEndDate(endDate);
     }, [startDate, endDate]);
-
-    const minDate = useMemo(() => dayjs().toDate(), []);
 
     const clickIn = useCallback(() => {
         setAnimationClass('fadeIn');
@@ -114,7 +112,6 @@ const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, is
                             inline
                             disabledKeyboardNavigation
                             onClickOutside={clickOut}
-                            minDate={minDate}
                             calendarStartDay={1}
                             openToDate={startDate || tempStartDate || dayjs().toDate()}
                         />

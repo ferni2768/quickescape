@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ICON_MAP, COLOR_MAP } from '../../Controller';
 
-const Button = React.memo(({ id, text, colorId, size, createRectangle, zoom, mouseFollowerRef, iconId, group, activeGroup }) => {
+const Button = React.memo(({ id, text, colorId, size, createRectangle, mouseFollowerRef, iconId, group, activeGroup }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
     const [shouldRender, setShouldRender] = useState(false);
@@ -75,7 +75,7 @@ const Button = React.memo(({ id, text, colorId, size, createRectangle, zoom, mou
 
         if (distanceMoved >= distanceToDrag) {
             const { offsetLeft, offsetTop } = mouseFollowerRef.current;
-            createRectangle(offsetLeft / zoom, offsetTop / zoom, 80, colorId, size, iconId, group);
+            createRectangle(offsetLeft, offsetTop, 80, colorId, size, iconId, group);
             hasExecutedRef.current = true;
             resetButtonPosition();
         } else {
@@ -84,7 +84,7 @@ const Button = React.memo(({ id, text, colorId, size, createRectangle, zoom, mou
             const button = buttonRef.current;
             if (button) button.style.transform = `translateX(calc(${adjustedDistance}px - 5ch))`;
         }
-    }, [isDragging, startX, mouseFollowerRef, createRectangle, zoom, colorId, size, iconId, group, handleMouseUp]);
+    }, [isDragging, startX, mouseFollowerRef, createRectangle, colorId, size, iconId, group, handleMouseUp]);
 
     // Animate the button when the active group changes
     useEffect(() => {
@@ -170,7 +170,6 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.color === nextProps.color &&
         prevProps.colorId === nextProps.colorId &&
         prevProps.size === nextProps.size &&
-        prevProps.zoom === nextProps.zoom &&
         prevProps.iconId === nextProps.iconId &&
         prevProps.group === nextProps.group &&
         prevProps.activeGroup === nextProps.activeGroup

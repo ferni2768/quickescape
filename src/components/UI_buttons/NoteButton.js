@@ -1,16 +1,15 @@
 import React, { memo } from 'react';
 import Button from './Button';
 
-const NoteButton = memo(({ createRectangle, zoom, mouseFollowerRef }) => {
+const NoteButton = memo(({ createRectangle, mouseFollowerRef }) => {
     return (
         <Button
             key={0}
             id={0}
             text={'Note'}
-            colorId={'note-yellow'}
+            colorId={'note'}
             size={2}
             createRectangle={createRectangle}
-            zoom={zoom}
             mouseFollowerRef={mouseFollowerRef}
             iconId={'note'}
             group={0}
@@ -26,7 +25,6 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.text === nextProps.text &&
         prevProps.color === nextProps.color &&
         prevProps.size === nextProps.size &&
-        prevProps.zoom === nextProps.zoom &&
         prevProps.group === nextProps.group &&
         prevProps.activeGroup === nextProps.activeGroup &&
         prevProps.icon === nextProps.icon

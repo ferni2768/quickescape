@@ -10,7 +10,7 @@ import { ICON_MAP } from '../Controller';
 import './styles/Buttons.css';
 
 const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLocked, visible, setVisible, text, setText, startDate, endDate, setStartDate, setEndDate,
-    isOpen, setIsOpen, setOverlay, activeRectangle, setOverTrashcanId, buttonContainerRef }) => {
+    isOpen, setIsOpen, setOverlay, activeRectangle, setOverTrashcanId, buttonContainerRef, clearData }) => {
 
     const [activeGroup, setActiveGroup] = useState(2);
     const [twoLines, setTwoLines] = useState(false);
@@ -51,21 +51,21 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
     // Memoize buttonGroups
     const buttonGroups = useMemo(() => ({
         1: [
-            { id: 1, text: 'Plane', colorId: 'travel-dark', size: 1, iconId: 'flight', group: 1 },
-            { id: 2, text: 'Train', colorId: 'travel-dark', size: 1, iconId: 'train', group: 1 },
-            { id: 3, text: 'Bus', colorId: 'travel-dark', size: 1, iconId: 'bus', group: 1 },
-            { id: 4, text: 'Car', colorId: 'travel-dark', size: 1, iconId: 'car', group: 1 },
+            { id: 1, text: 'Plane', colorId: 'travel', size: 1, iconId: 'plane', group: 1 },
+            { id: 2, text: 'Train', colorId: 'travel', size: 1, iconId: 'train', group: 1 },
+            { id: 3, text: 'Bus', colorId: 'travel', size: 1, iconId: 'bus', group: 1 },
+            { id: 4, text: 'Car', colorId: 'travel', size: 1, iconId: 'car', group: 1 },
         ],
         2: [
-            { id: 5, text: 'Tour', colorId: 'activity-red', size: 2, iconId: 'location', group: 2 },
-            { id: 6, text: 'Culture', colorId: 'activity-brown', size: 2, iconId: 'culture', group: 2 },
-            { id: 7, text: 'Shop', colorId: 'activity-green', size: 2, iconId: 'shopping', group: 2 },
-            { id: 8, text: 'Party', colorId: 'activity-blue', size: 2, iconId: 'party', group: 2 }
+            { id: 5, text: 'Places', colorId: 'tour', size: 2, iconId: 'tour', group: 2 },
+            { id: 6, text: 'Culture', colorId: 'culture', size: 2, iconId: 'culture', group: 2 },
+            { id: 7, text: 'Shop', colorId: 'shop', size: 2, iconId: 'shop', group: 2 },
+            { id: 8, text: 'Party', colorId: 'party', size: 2, iconId: 'party', group: 2 }
         ],
         3: [
-            { id: 9, text: 'Hotel', colorId: 'hotel-pink', size: 4, iconId: 'hotel', group: 3 },
-            { id: 10, text: 'Eat', colorId: 'dining-orange', size: 3, iconId: 'dining', group: 3 },
-            { id: 11, text: 'Free', colorId: 'free-gray', size: 4, iconId: 'time', group: 3 },
+            { id: 9, text: 'Hotel', colorId: 'hotel', size: 4, iconId: 'hotel', group: 3 },
+            { id: 10, text: 'Eat', colorId: 'eat', size: 3, iconId: 'eat', group: 3 },
+            { id: 11, text: 'Free', colorId: 'free', size: 4, iconId: 'free', group: 3 },
         ],
     }), []);
 
@@ -155,7 +155,6 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                                         colorId={button.colorId}
                                         size={button.size}
                                         createRectangle={createRectangle}
-                                        zoom={zoom}
                                         mouseFollowerRef={mouseFollowerRef}
                                         iconId={button.iconId}
                                         group={button.group}
@@ -169,7 +168,6 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
                     <div className="UI note-button">
                         <NoteButton
                             createRectangle={createRectangle}
-                            zoom={zoom}
                             mouseFollowerRef={mouseFollowerRef}
                         />
                     </div>
@@ -212,7 +210,7 @@ const UI = React.memo(({ createRectangle, zoom, mouseFollowerRef, locked, setLoc
             </div>
 
             <div className="UI bottom-right-container" >
-                <Trashcan className="UI trashcan" activeRectangle={activeRectangle} setOverTrashcanId={setOverTrashcanId} />
+                <Trashcan className="UI trashcan" activeRectangle={activeRectangle} setOverTrashcanId={setOverTrashcanId} clearData={clearData} />
             </div>
         </div>
     );

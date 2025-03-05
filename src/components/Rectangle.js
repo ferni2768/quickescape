@@ -15,7 +15,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
     const [rectangleState, setRectangleState] = useState({
         absolutePosition: { x: rect.x, y: rect.y },
         initialDragPosition: { x: rect.x, y: rect.y },
-        height: rect.height || gridSize * 4,
+        height: rect.height || (isNote ? gridSize * 4 + 11 : gridSize * 4),
         deleting: false
     });
 
@@ -468,7 +468,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                             });
                             return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${styleProps.scale.get()})`;
                         }),
-                        height: rectangleProps.height,
+                        height: isNote ? rectangleProps.height.to(h => h + 11) : rectangleProps.height,
                         width: rectangleWidth,
                         outline: `3px solid rgba(36,47,54, 1)`,
                         border: `1px solid ${color}`,
@@ -494,7 +494,7 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                             });
                             return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${styleProps.scale.get()})`;
                         }),
-                        height: rectangleProps.height,
+                        height: isNote ? rectangleProps.height.to(h => h + 11) : rectangleProps.height,
                         pointerEvents: 'all',
                         position: 'absolute',
                         backgroundColor: styleProps.backgroundColor,
@@ -509,31 +509,30 @@ const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSec
                         outline: `3px solid rgba(36, 47, 54, ${(rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 || isOverTrashcan) ? 0 : 0.75})`,
                     }}
                 >
-                    <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
-                        {!isNote && (
-                            <>
-                                {!isSmallRectangle ? (
-                                    <>
-                                        {icon}
-                                        <div className='rectangle-header-text'>
-                                            {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
-                                                `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
-                                                `${calculateDuration(rectangleState.height)}h`}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div style={{ flexDirection: "column" }}>
-                                        <div className='rectangle-icon-small'>{icon}</div>
-                                        <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
-                                            {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
-                                                `${formatTime(gridPositionToTime(ghostY))}` :
-                                                `${calculateDuration(rectangleState.height)}h`}
-                                        </div>
+                    {!isNote && (
+                        <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
+                            {!isSmallRectangle ? (
+                                <>
+                                    {icon}
+                                    <div className='rectangle-header-text'>
+                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
+                                            `${formatTime(gridPositionToTime(ghostY))}-${formatTime(gridPositionToTime(ghostY + rectangleState.height))}` :
+                                            `${calculateDuration(rectangleState.height)}h`}
                                     </div>
-                                )}
-                            </>
-                        )}
-                    </div>
+                                </>
+                            ) : (
+                                <div style={{ flexDirection: "column" }}>
+                                    <div className='rectangle-icon-small'>{icon}</div>
+                                    <div className='rectangle-time' style={{ transform: rectangleState.height <= gridSize * 2 ? 'translateY(1ch)' : 'translateY(0)' }}>
+                                        {((showGhost || rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2) && (!isOverTrashcan || !isDragging || isResizing)) ?
+                                            `${formatTime(gridPositionToTime(ghostY))}` :
+                                            `${calculateDuration(rectangleState.height)}h`}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {isEditing ? (
                         <textarea
                             className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}

@@ -56,7 +56,8 @@ function App() {
     text,
     setText,
     dateRange,
-    setDateRange
+    setDateRange,
+    clearData
   } = useController();
 
   const {
@@ -334,8 +335,9 @@ function App() {
     setEndDate,
     isOpen,
     setIsOpen,
-    setOverlay
-  }), [createRectangle, zoom, locked, visible, isOpen, text, dateRange.start, dateRange.end, activeRectangle, setText, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId, setOverlay]);
+    setOverlay,
+    clearData
+  }), [createRectangle, zoom, locked, visible, isOpen, text, dateRange.start, dateRange.end, activeRectangle, setText, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId, setOverlay, clearData]);
 
 
   return (

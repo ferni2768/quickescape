@@ -18,20 +18,21 @@ export const RECTANGLE_BORDER_RADIUS = '2ch';
 
 export const ICON_MAP = {
     // Travel icons
-    'flight': <Flight />,
+    'plane': <Flight />,
     'train': <Train />,
     'bus': <DirectionsBus />,
     'car': <DirectionsCar />,
 
     // Activity icons
-    'location': <LocationOn />,
+    'tour': <LocationOn />,
     'culture': <AccountBalance />,
-    'shopping': <ShoppingBag />,
+    'shop': <ShoppingBag />,
     'party': <Nightlife />,
     'hotel': <Hotel />,
-    'dining': <LocalDining />,
-    'time': <AccessTimeFilled />,
+    'eat': <LocalDining />,
+    'free': <AccessTimeFilled />,
 
+    // Note icon
     'note': <StickyNote2 />,
 
     // UI control icons
@@ -43,22 +44,19 @@ export const ICON_MAP = {
 
 export const COLOR_MAP = {
     // Travel colors
-    'travel-dark': '#1D333A',
+    'travel': '#1D333A',
 
     // Activity colors
-    'activity-red': '#DD3131',
-    'activity-brown': '#814822',
-    'activity-green': '#69BC29',
-    'activity-blue': '#3892C7',
+    'tour': '#DD3131',
+    'culture': '#814822',
+    'shop': '#69BC29',
+    'party': '#3892C7',
+    'hotel': '#A84355',
+    'eat': '#FF8C00',
+    'free': '#98A6AB',
 
-    // Other colors
-    'hotel-pink': '#A84355',
-    'dining-orange': '#FF8C00',
-    'free-gray': '#98A6AB',
-
-    // Note colors
-    'note-yellow': '#FFC107',
-    'note-purple': '#9C27B0',
+    // Note color
+    'note': '#FFC107',
 };
 
 //=============================================================================
@@ -460,9 +458,9 @@ export const useController = () => {
             if (prev.length >= maxRectangles) return prev;
             const newRectangle = {
                 id: idCounter.current,
-                x,
-                y,
-                height,
+                x: x / cameraStateRef.current.zoom,
+                y: y / cameraStateRef.current.zoom,
+                height: group === 0 ? height - gridSize : height,
                 border: 0,
                 isDragging: true,
                 isResizing: false,
@@ -479,6 +477,17 @@ export const useController = () => {
         });
         idCounter.current++;
     }, [maxRectangles]);
+
+    // FOR DEVELOPMENT: delete all local storage data
+    const clearData = useCallback(() => {
+        const registry = getRegistry();
+        registry.trips.forEach(trip => { localStorage.removeItem(trip.hash); });
+        localStorage.removeItem(REGISTRY_KEY);
+
+        // Refresh the page
+        preventFlushing.current = true;
+        window.location.reload();
+    }, []);
 
     // Memoized controller object to prevent unnecessary re-renders
     const controller = useMemo(() => ({
@@ -500,8 +509,9 @@ export const useController = () => {
         text,
         setText,
         dateRange,
-        setDateRange
-    }), [rectangles, activeRectangle, adjustedMousePosition, gridSize, getClientXY, createRectangle, cameraPosition, zoom, locked, dateRange, text]);
+        setDateRange,
+        clearData
+    }), [rectangles, activeRectangle, adjustedMousePosition, gridSize, getClientXY, createRectangle, cameraPosition, zoom, locked, dateRange, text, clearData]);
 
     // -------------------- STORAGE EFFECTS --------------------
     // Throttled saving for rectangles (0.5 seconds)
@@ -551,23 +561,12 @@ export const useController = () => {
         };
     }, []);
 
-    // FOR DEVELOPMENT: delete all data with Ctrl+D
+    // -------------------- CLEAR DATA ON CTRL+D --------------------
     useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.ctrlKey && event.keyCode === 68) {
                 event.preventDefault();
-
-                const clearAllData = () => {
-                    // Clear all trip data
-                    const registry = getRegistry();
-                    registry.trips.forEach(trip => { localStorage.removeItem(trip.hash); });
-                    localStorage.removeItem(REGISTRY_KEY);
-
-                    // Refresh the page
-                    preventFlushing.current = true;
-                    window.location.reload();
-                };
-                clearAllData();
+                clearData();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -575,7 +574,7 @@ export const useController = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [clearData]);
 
     return controller;
 };
