@@ -3,6 +3,7 @@ import { animated } from '@react-spring/web';
 import { Camera } from './components/Camera';
 import Rectangle from './components/Rectangle';
 import { useController } from '../src/Controller';
+import { RECTANGLE_SIZES } from './Controller';
 import UI from './components/UI';
 import dayjs from 'dayjs';
 import DateLabels from './components/DateLabels';
@@ -12,9 +13,13 @@ import './components/styles/Room.css';
 const MemoizedUI = React.memo(UI, (prevProps, nextProps) => (
   prevProps.zoom === nextProps.zoom &&
   prevProps.locked === nextProps.locked &&
+  prevProps.visible === nextProps.visible &&
   prevProps.isOpen === nextProps.isOpen &&
+  prevProps.setOverlay === nextProps.setOver &&
   prevProps.activeRectangle === nextProps.activeRectangle &&
   prevProps.overTrashcanId === nextProps.overTrashcanId &&
+  prevProps.text === nextProps.text &&
+  prevProps.setText === nextProps.setText &&
   prevProps.startDate?.getTime() === nextProps.startDate?.getTime() &&
   prevProps.endDate?.getTime() === nextProps.endDate?.getTime()
 ));
@@ -25,8 +30,12 @@ const MemoizedRectangle = React.memo(Rectangle);
 function App() {
   const mouseFollowerRef = useRef(null);
   const appRef = useRef(null);
-  const [locked, setLocked] = useState(true);
+  const buttonContainerRef = useRef();
+  const [visible, setVisible] = useState(true);
   const [overTrashcanId, setOverTrashcanId] = useState(null);
+  const [overlay, setOverlay] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [centerSectionReady, setCenterSectionReady] = useState(false);
 
   const {
     rectangles,
@@ -37,10 +46,20 @@ function App() {
     setAdjustedMousePosition,
     gridSize,
     getClientXY,
-    createRectangle
+    createRectangle,
+    zoom,
+    setZoom,
+    cameraPosition,
+    setCameraPosition,
+    locked,
+    setLocked,
+    text,
+    setText,
+    dateRange,
+    setDateRange,
+    clearData
   } = useController();
 
-  const cameraDeps = useMemo(() => ({ getClientXY, locked }), [getClientXY, locked]);
   const {
     viewportState,
     centerSectionRef,
@@ -49,20 +68,13 @@ function App() {
     handleTouchEnd,
     cameraProps,
     zoomProps,
-    zoom,
+    zooming,
     refresh
-  } = Camera(cameraDeps.getClientXY, cameraDeps.locked);
-
-  // Date range state
-  const [isOpen, setIsOpen] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(),
-    end: dayjs().add(2, 'day').toDate()
-  });
+  } = Camera(getClientXY, locked, visible, isOpen, overlay, zoom, setZoom, cameraPosition, setCameraPosition, buttonContainerRef);
 
   // Memoized setStartDate and setEndDate
-  const setStartDate = useCallback((date) => setDateRange(prev => ({ ...prev, start: date })), []);
-  const setEndDate = useCallback((date) => setDateRange(prev => ({ ...prev, end: date })), []);
+  const setStartDate = useCallback((date) => setDateRange(prev => ({ ...prev, start: date })), [setDateRange]);
+  const setEndDate = useCallback((date) => setDateRange(prev => ({ ...prev, end: date })), [setDateRange]);
 
   // Memoized app dimensions handler
   const setAppDimensions = useCallback(() => {
@@ -84,6 +96,52 @@ function App() {
       window.removeEventListener('orientationchange', handleResizeOrOrientationChange);
     };
   }, [setAppDimensions]);
+
+  useEffect(() => {
+    if (centerSectionRef.current) setCenterSectionReady(true);
+  }, [centerSectionRef]);
+
+  // Function to check if rectangle is snapped
+  const isSnapped = useCallback((rect) => {
+    return rect.x === centerSectionRef.current.style.x - (RECTANGLE_SIZES[rect.size]) / 2;
+  }, [centerSectionRef]);
+
+  // Function to check if rectangle has adjacent rectangles
+  const checkAdjacentBorders = useCallback((targetRect) => {
+    const centerSectionStart = centerSectionRef.current.style.x - (RECTANGLE_SIZES[targetRect.size] + 100);
+    const centerSectionEnd = centerSectionRef.current.style.x + 100;
+
+    if (targetRect.isNote || !(targetRect.x > centerSectionStart && targetRect.x < centerSectionEnd))
+      return;
+
+    setRectangles(prev => prev.map(rect => {
+      if (!isSnapped(rect) || rect.isNote) return rect;
+      let newBorder = rect.border;
+
+      const topNeighbor = prev.find(r =>
+        r.id !== rect.id &&
+        isSnapped(r) &&
+        r.size <= rect.size &&
+        Math.abs(r.y + r.height - rect.y) < gridSize / 2
+      );
+      const bottomNeighbor = prev.find(r =>
+        r.id !== rect.id &&
+        isSnapped(r) &&
+        r.size <= rect.size &&
+        Math.abs(rect.y + rect.height - r.y) < gridSize / 2
+      );
+
+      // For the target rectangle
+      if (rect.id === targetRect.id) {
+        newBorder = (topNeighbor ? 1 : 0) + (bottomNeighbor ? 2 : 0);
+      } else {
+        if (bottomNeighbor) newBorder |= 2;
+        if (topNeighbor) newBorder |= 1;
+      }
+
+      return newBorder !== rect.border ? { ...rect, border: newBorder } : rect;
+    }));
+  }, [gridSize, setRectangles, isSnapped, centerSectionRef]);
 
   // Memoized move handler
   const handleMoveWrapper = useCallback((event) => {
@@ -148,17 +206,53 @@ function App() {
       });
     }
 
-    if (rect) {
+    if ((rect && !event.touches) || (rect && event.touches && event.touches.length === 1)) {
       setActiveRectangle(rect.id);
-      setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: instance.id === rect.id })));
-    } else {
-      // If no rectangle is found, set all to isDragging: false
-      setActiveRectangle(null);
-      setRectangles(prevRectangles => prevRectangles.map(instance => ({ ...instance, isDragging: false })));
 
-      if (!UI && !isOpen) handleMouseDownCamera(event);
+      setRectangles(prevRectangles => {
+        let updated = prevRectangles.map(r => {
+          if (r.id === rect.id) return { ...r, border: 0, isDragging: true };
+
+          // Only check neighbors if the active rectangle is snapped
+          if (isSnapped(rect)) {
+            const wasTopNeighbor = Math.abs(r.y + r.height - rect.y) < gridSize / 2;
+            const wasBottomNeighbor = Math.abs(rect.y + rect.height - r.y) < gridSize / 2;
+
+            if (!r.isNote && isSnapped(r)) {
+              let newBorder = r.border;
+              if (wasTopNeighbor) newBorder &= ~2;
+              if (wasBottomNeighbor) newBorder &= ~1;
+              return { ...r, border: newBorder };
+            }
+          }
+          return r;
+        });
+
+        // Move the active rectangle to the end to update the z-index
+        const currentRectIndex = updated.findIndex(r => r.id === rect.id);
+        if (currentRectIndex !== -1) {
+          const [currentRect] = updated.splice(currentRectIndex, 1);
+          updated.push(currentRect);
+        }
+
+        return updated;
+      });
+    } else {
+      setTimeout(() => {
+        setRectangles(prev => prev.map(rect => ({ ...rect, isDragging: false })));
+        setActiveRectangle(null);
+      }, 10);
+
+      setTimeout(() => {
+        rectangles.forEach(rect => {
+          if (rect.isDragging)
+            checkAdjacentBorders(rect);
+        });
+      }, 250);
+
+      if (!UI && !isOpen && !overlay) handleMouseDownCamera(event);
     }
-  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition]);
+  }, [rectangles, handleMouseDownCamera, setActiveRectangle, setRectangles, isOpen, overlay, getClientXY, centerSectionRef, zoom, setAdjustedMousePosition, gridSize, isSnapped, checkAdjacentBorders]);
 
   useEffect(() => {
     window.addEventListener('touchstart', handleDown, { passive: false });
@@ -170,27 +264,31 @@ function App() {
     };
   }, [handleDown]);
 
-  // Memoized up handler
+  // Memoized mouse up handler
   const handleUp = useCallback((event) => {
     event.preventDefault();
     event.stopPropagation();
 
-    setTimeout(() => {
-      setRectangles(prev => prev.map(rect =>
-        rect.id === activeRectangle ? { ...rect, isDragging: false } : rect
-      ));
-      setActiveRectangle(null);
-    }, 0);
+    const rect = rectangles.find(r => r.id === activeRectangle);
 
     setTimeout(() => {
       setRectangles(prev => prev.map(rect =>
         rect.isDragging ? { ...rect, isDragging: false } : rect
       ));
-    }, 10);
+      setActiveRectangle(null);
+    }, 5);
+
+    setTimeout(() => {
+      if (rect) {
+        const currentRect = rectangles.find(r => r.id === rect.id);
+        if (currentRect.isDragging)
+          checkAdjacentBorders(currentRect);
+      }
+    }, 250);
 
     document.body.style.cursor = 'default';
     handleTouchEnd();
-  }, [activeRectangle, handleTouchEnd, setActiveRectangle, setRectangles]);
+  }, [activeRectangle, handleTouchEnd, setActiveRectangle, setRectangles, rectangles, checkAdjacentBorders]);
 
   useEffect(() => {
     window.addEventListener('touchend', handleUp, { passive: false });
@@ -221,18 +319,25 @@ function App() {
   const uiProps = useMemo(() => ({
     createRectangle,
     mouseFollowerRef,
+    buttonContainerRef,
     zoom,
     locked,
     setLocked,
+    visible,
+    setVisible,
     activeRectangle,
     setOverTrashcanId,
+    text,
+    setText,
     startDate: dateRange.start,
     endDate: dateRange.end,
     setStartDate,
     setEndDate,
     isOpen,
-    setIsOpen
-  }), [createRectangle, zoom, locked, isOpen, dateRange.start, dateRange.end, activeRectangle, setStartDate, setEndDate, setLocked, setOverTrashcanId]);
+    setIsOpen,
+    setOverlay,
+    clearData
+  }), [createRectangle, zoom, locked, visible, isOpen, text, dateRange.start, dateRange.end, activeRectangle, setText, setStartDate, setEndDate, setLocked, setVisible, setOverTrashcanId, setOverlay, clearData]);
 
 
   return (
@@ -268,11 +373,12 @@ function App() {
             }}
           />
 
-          {rectangles.map((rect) => (
+          {centerSectionReady && rectangles.map((rect) => (
             <MemoizedRectangle
               key={rect.id}
               viewportState={viewportState}
               zoom={zoom}
+              zooming={zooming}
               centerSectionRef={centerSectionRef}
               mouseFollowerRef={mouseFollowerRef}
               rect={rect}
@@ -288,6 +394,7 @@ function App() {
               isNote={rect.isNote}
               refresh={refresh}
               isOverTrashcan={overTrashcanId === rect.id}
+              initialText={rect.text}
             />
           ))}
 

@@ -1,4 +1,13 @@
 import React, { useState, useCallback } from 'react';
+import FlightIcon from '@mui/icons-material/Flight';
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
+import Home from '@mui/icons-material/Home';
+
+const iconMap = {
+    1: <FlightIcon style={{ pointerEvents: 'none' }} />,
+    2: <DirectionsWalkIcon style={{ pointerEvents: 'none' }} />,
+    3: <Home style={{ pointerEvents: 'none' }} />
+};
 
 const SwitchButton = React.memo(({ group, activeGroup, setActiveGroup }) => {
     const [isTouched, setIsTouched] = useState(false);
@@ -25,7 +34,7 @@ const SwitchButton = React.memo(({ group, activeGroup, setActiveGroup }) => {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            {group}
+            {iconMap[group] || '❓'}
         </button>
     );
 });

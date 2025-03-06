@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import DatePicker from 'react-datepicker';
 import dayjs from 'dayjs';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -15,10 +15,6 @@ const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, is
         setTempEndDate(endDate);
     }, [startDate, endDate]);
 
-    const minDate = useMemo(() => dayjs().toDate(), []);
-    const maxDate = useMemo(() => (startDate ? dayjs(startDate).add(1, 'month').toDate() : null), [startDate]);
-
-    // Memoize event handlers
     const clickIn = useCallback(() => {
         setAnimationClass('fadeIn');
         setIsOpen(true);
@@ -42,8 +38,22 @@ const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, is
     // Handle date change
     const handleDateChange = useCallback((dates) => {
         const [start, end] = dates;
-        setTempStartDate(start);
-        setTempEndDate(end);
+
+        if (end) {
+            const oneMonthAfterStart = dayjs(start).add(1, 'month');
+            const isEndBeyondMonth = dayjs(end).isAfter(oneMonthAfterStart);
+
+            if (isEndBeyondMonth) {
+                setTempStartDate(end);
+                setTempEndDate(null);
+            } else {
+                setTempStartDate(start);
+                setTempEndDate(end);
+            }
+        } else {
+            setTempStartDate(start);
+            setTempEndDate(end);
+        }
     }, []);
 
     // Simulate click on touch devices
@@ -80,33 +90,37 @@ const DateRangePicker = memo(({ startDate, endDate, setStartDate, setEndDate, is
 
 
     return (
-        <div className={`UI date-range ${twoLines ? 'two-lines' : ''}`} ref={datePickerRef}>
-            <div
-                className={`UI date-range-label ${isOpen ? 'opened' : 'closed'}`}
-                style={{ position: 'absolute', top: 0, left: 0, color: 'black', cursor: 'pointer', width: '100%' }}
-                onClick={clickIn}
-                onTouchStart={clickIn}
-            >
-                {`${startDate ? dayjs(startDate).format('DD MMM') : ''} - ${endDate ? dayjs(endDate).format('DD MMM') : ''}`}
+        <>
+            <div className={`UI date-range ${twoLines ? 'two-lines' : ''}`} ref={datePickerRef}>
+                <div
+                    className={`UI date-range-label ${isOpen ? 'opened' : 'closed'}`}
+                    style={{ position: 'absolute', top: 0, left: 0, color: 'black', cursor: 'pointer', width: '100%' }}
+                    onClick={clickIn}
+                    onTouchStart={clickIn}
+                >
+                    {`${startDate ? dayjs(startDate).format('DD MMM') : ''} - ${endDate ? dayjs(endDate).format('DD MMM') : ''}`}
+                </div>
+
+                <div className={`UI ${animationClass}`}>
+                    {isOpen &&
+                        <DatePicker
+                            selected={tempStartDate}
+                            onChange={handleDateChange}
+                            startDate={tempStartDate}
+                            endDate={tempEndDate}
+                            selectsRange
+                            inline
+                            disabledKeyboardNavigation
+                            onClickOutside={clickOut}
+                            calendarStartDay={1}
+                            openToDate={startDate || tempStartDate || dayjs().toDate()}
+                        />
+                    }
+                </div>
             </div>
 
-            <div className={`UI ${animationClass}`}>
-                {isOpen &&
-                    <DatePicker
-                        selected={tempStartDate}
-                        onChange={handleDateChange}
-                        startDate={tempStartDate}
-                        endDate={tempEndDate}
-                        selectsRange
-                        inline
-                        onClickOutside={clickOut}
-                        minDate={minDate}
-                        maxDate={maxDate}
-                        calendarStartDay={1}
-                    />
-                }
-            </div>
-        </div>
+            <div className={`date-picker-overlay ${isOpen ? 'visible' : ''}`} />
+        </>
     );
 });
 

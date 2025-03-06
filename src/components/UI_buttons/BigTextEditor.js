@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import '../styles/TripName.css';
 
-const BigTextEditor = memo(({ setTwoLines }) => {
+const BigTextEditor = memo(({ text, setText, setTwoLines }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [text, setText] = useState("Trip Name");
     const textareaRef = useRef(null);
     const textRef = useRef(null);
 
@@ -61,7 +60,7 @@ const BigTextEditor = memo(({ setTwoLines }) => {
                 setTwoLines(true);
             }
         }, 10);
-    }, [setTwoLines]);
+    }, [setTwoLines, setText]);
 
     // Handle blur to remove the last line break
     const handleBlur = useCallback(() => {
@@ -86,7 +85,7 @@ const BigTextEditor = memo(({ setTwoLines }) => {
         if (cleanText !== text) setTwoLines(false);
         setText(cleanText);
         setIsEditing(false);
-    }, [text, setTwoLines]);
+    }, [text, setTwoLines, setText]);
 
     // Set the height of the textarea to fit the text when editing starts
     useEffect(() => {
@@ -121,11 +120,25 @@ const BigTextEditor = memo(({ setTwoLines }) => {
             setTwoLines(false);
             setText(newText);
         }
-    }, [text, setTwoLines]);
+    }, [text, setTwoLines, setText]);
 
     // Memoize the click and touch handlers
     const handleClick = useCallback(() => setIsEditing(true), []);
     const handleTouchStart = useCallback(() => setIsEditing(true), []);
+
+    // Check if the text exceeds 2 lines when loading it from memory
+    useEffect(() => {
+        const textElement = textRef.current;
+        if (textElement) {
+            const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight);
+            textElement.textContent = text;
+            const textHeight = textElement.scrollHeight;
+            const numberOfLines = textHeight / lineHeight;
+
+            if (numberOfLines >= 1.5) setTwoLines(true);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
 
     return (
@@ -147,6 +160,8 @@ const BigTextEditor = memo(({ setTwoLines }) => {
             </div>
         </div>
     );
+}, (prevProps, nextProps) => {
+    return prevProps.setTwoLines === nextProps.setTwoLines && prevProps.text === nextProps.text && prevProps.setText === nextProps.setText;
 });
 
 export default BigTextEditor;

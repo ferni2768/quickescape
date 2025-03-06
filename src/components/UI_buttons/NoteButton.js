@@ -1,20 +1,19 @@
 import React, { memo } from 'react';
 import Button from './Button';
-import { Home } from '@mui/icons-material';
 
-const NoteButton = memo(({ createRectangle, zoom, mouseFollowerRef }) => {
+const NoteButton = memo(({ createRectangle, mouseFollowerRef }) => {
     return (
         <Button
             key={0}
             id={0}
             text={'Note'}
-            color={'#DAA520'}
-            size={1}
+            colorId={'note'}
+            size={2}
             createRectangle={createRectangle}
-            zoom={zoom}
             mouseFollowerRef={mouseFollowerRef}
-            icon={<Home />}
+            iconId={'note'}
             group={0}
+            className='note'
         />
     );
 });
@@ -26,7 +25,6 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.text === nextProps.text &&
         prevProps.color === nextProps.color &&
         prevProps.size === nextProps.size &&
-        prevProps.zoom === nextProps.zoom &&
         prevProps.group === nextProps.group &&
         prevProps.activeGroup === nextProps.activeGroup &&
         prevProps.icon === nextProps.icon

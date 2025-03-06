@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSpring, animated, easings } from '@react-spring/web';
 import { RECTANGLE_SIZES } from '../Controller';
+import { RECTANGLE_BORDER_RADIUS } from '../Controller';
+import { COLOR_MAP, ICON_MAP } from '../Controller';
 import './styles/Rectangle.css';
 
-const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
-    rectangles, setRectangles, getClientXY, isDragging, color, size, icon, isNote, isOverTrashcan }) => {
+const Rectangle = React.memo(({ viewportState, zoom, zooming, refresh, centerSectionRef, mouseFollowerRef, rect, adjustedMousePosition, gridSize,
+    rectangles, setRectangles, getClientXY, isDragging, size, isNote, isOverTrashcan }) => {
+
+    const color = COLOR_MAP[rect.colorId];
+    const icon = ICON_MAP[rect.iconId];
 
     // State object with state variables
     const [rectangleState, setRectangleState] = useState({
         absolutePosition: { x: rect.x, y: rect.y },
         initialDragPosition: { x: rect.x, y: rect.y },
-        height: rect.height || gridSize * 4,
+        height: rect.height || (isNote ? gridSize * 4 + 11 : gridSize * 4),
         deleting: false
     });
 
@@ -19,10 +24,17 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const [isResizing, setIsResizing] = useState(false);
     const [showGhost, setShowGhost] = useState(false);
     const rectangleWidth = RECTANGLE_SIZES[size];
-    const justCreated = useRef(true);
-    const dragged = useRef(false);
+    const dragged = useRef(rect.loadedFromStorage);
+    const justCreated = useRef(!rect.loadedFromStorage);
+
+    // State variables for rectangle text editing
+    const [startTime, setStartTime] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [text, setText] = useState(rect.text || "");
+    const textareaRef = useRef(null);
+
     const xOffsetSpring = useSpring({
-        from: { xOffset: (viewportState.windowSize.width) / zoom },
+        from: { xOffset: justCreated.current ? (viewportState.windowSize.width) / zoom : 0 },
         to: { xOffset: 0 },
         config: {
             duration: 300,
@@ -30,19 +42,33 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         },
     });
     const xOffset = xOffsetSpring.xOffset;
-    const [overTrashcanProps, setOverTrashcanProps] = useSpring(() => ({
+    const [styleProps, setStyleProps] = useSpring(() => ({
         scale: 1,
         opacity: 1,
         backgroundColor: color,
+        boxShadow: '0 0 0px rgba(0, 0, 0, 0)',
         config: { tension: 2000, friction: 100 },
     }));
 
-    // State variables for rectangle text editing
-    const [startTime, setStartTime] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [text, setText] = useState("");
-    const [editDistance, setEditDistance] = useState(0);
-    const textareaRef = useRef(null);
+    // Update rectangle data when text changes
+    useEffect(() => {
+        if (text !== undefined) {
+            setRectangles((prevRectangles) =>
+                prevRectangles.map((r) => {
+                    if (r.id === rect.id) {
+                        return { ...r, text };
+                    }
+                    return r;
+                })
+            );
+        }
+    }, [text, rect.id, setRectangles]);
+
+    // Initialize text from rect.text if available
+    useEffect(() => {
+        if (rect.text !== undefined && rect.text !== null)
+            setText(rect.text);
+    }, [rect.text]);
 
     // Animation parameters for rectangle position and size
     const mass = 0.3 * (1 + zoom / 2) + (rectangleState.height * rectangleWidth) / 10;
@@ -92,14 +118,13 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             prevRectangles.map((r) => {
                 if (r.id === rect.id) {
                     // Only update if one of the values has changed
-                    if (r.x !== rectangleState.absolutePosition.x || r.y !== rectangleState.absolutePosition.y || r.height !== rectangleState.height)
-                        return { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height };
+                    if (r.x !== rectangleState.absolutePosition.x || r.y !== rectangleState.absolutePosition.y || r.height !== rectangleState.height || r.border !== rect.border)
+                        return { ...r, x: rectangleState.absolutePosition.x, y: rectangleState.absolutePosition.y, height: rectangleState.height, border: rect.border };
                 }
                 return r;
             })
         );
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rectangleState.absolutePosition, rectangleState.height, rect.id, setRectangles]);
+    }, [rectangleState.absolutePosition.x, rectangleState.absolutePosition.y, rectangleState.height, rect.id, rect.border, setRectangles]);
 
     // Get the relative position of an absolute position for the rectangle
     const getRelativePosition = useCallback(
@@ -118,6 +143,12 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
     const handleMouseRectangle = useCallback((event) => {
         event.preventDefault();
 
+        if (event.touches && event.touches.length > 1) {
+            setState(0);
+            setStartTime(null);
+            return;
+        }
+
         if (state === 0) {
             setState(1);
             dragged.current = true;
@@ -130,7 +161,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
             setRectangleState((prev) => ({ ...prev, initialDragPosition: { ...rectangleState.absolutePosition } }));
 
-            if (!justCreated.current && adjustedMousePosition.y >= currentRectBottom - 35 && adjustedMousePosition.x >= currentRectRight - 35) {
+            if (!justCreated.current && adjustedMousePosition.y >= currentRectBottom - 50 && adjustedMousePosition.x >= currentRectRight - 50) {
                 setIsResizing(true);
                 document.body.style.cursor = 'ns-resize';
                 setPositionState((prev) => ({
@@ -152,7 +183,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 }));
             }
         } else if (state === 1) {
-
             if (event.touches && event.touches.length > 1) {
                 setState(0);
                 return;
@@ -160,19 +190,14 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
 
             const { clientX, clientY } = getClientXY(event);
 
-            const dx = Math.abs(clientX - rectangleState.absolutePosition.x);
-            const dy = Math.abs(clientY - rectangleState.absolutePosition.y);
-
-            const newDistance = Math.sqrt(dx * dx + dy * dy) / 10;
-            if (Math.abs(newDistance - editDistance) > 0.5)
-                setEditDistance(newDistance);
-
             if (!isResizing) {
                 const newMousePosition = { x: clientX, y: clientY };
-                setPositionState((prev) => ({
-                    ...prev,
-                    mousePosition: newMousePosition,
-                }));
+                if (newMousePosition.x !== positionState.mousePosition.x || newMousePosition.y !== positionState.mousePosition.y) {
+                    setPositionState((prev) => ({
+                        ...prev,
+                        mousePosition: newMousePosition,
+                    }));
+                }
 
                 let newAbsolutePosition;
 
@@ -192,10 +217,10 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 setRectangleState((prev) => ({ ...prev, absolutePosition: newAbsolutePosition }));
             } else {
                 const newY = clientY - positionState.offset.y;
-                const newHeight = Math.max(gridSize * 2, Math.min(
+                const newHeight = Math.max(gridSize * 2, Math.min(gridSize * 4 * 24, Math.min(
                     centerSectionRef.current.offsetHeight - rectangleState.absolutePosition.y,
                     Math.round((newY - rectangleState.absolutePosition.y) / gridSize) * gridSize
-                ));
+                )));
                 var canResize = true;
 
                 if (rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 && !isNote) {
@@ -210,16 +235,36 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                 if (canResize) setRectangleState((prev) => ({ ...prev, height: newHeight }));
             }
         }
-    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, editDistance, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
+    }, [centerSectionRef, mouseFollowerRef, viewportState, zoom, positionState, isResizing, isNote, gridSize, rectangles, rectangleState, rectangleWidth, doesOverlap, getClientXY, adjustedMousePosition, getRelativePosition, state, rect.id, isEditing]);
 
     // Update the rectangle scale, opacity, and backgroundColor when dragging over the trashcan
     useEffect(() => {
-        if (isDragging && !isResizing && isOverTrashcan) {
-            setOverTrashcanProps.start({ scale: 0.8, opacity: 0.7, backgroundColor: 'rgba(255, 0, 0, 0.5)' });
-        } else {
-            if (!rectangleState.deleting) setOverTrashcanProps.start({ scale: 1, opacity: 1, backgroundColor: color });
-        }
-    }, [isDragging, isResizing, isOverTrashcan, setOverTrashcanProps, rectangleState.deleting, color]);
+        const bigScale = 1.075;
+
+        const getScale = () => {
+            if (rectangleState.deleting) return 0.7;
+            if (isDragging && !isResizing) {
+                if (isOverTrashcan) return 0.8;
+                if (state === 1) return bigScale;
+            }
+            return 1;
+        };
+
+        const scale = getScale();
+
+        setStyleProps.start({
+            scale,
+            opacity: rectangleState.deleting ? 0 :
+                (isDragging && !isResizing && isOverTrashcan) ? 0.7 : 1,
+            backgroundColor: (isDragging && !isResizing && isOverTrashcan) ?
+                'rgba(255, 0, 0, 0.5)' : color,
+            boxShadow: (isDragging && !isOverTrashcan) ? '-7px 7px 20px rgba(0, 0, 0, 0.3)' : '0px 0px 0px rgba(0, 0, 0, 0)',
+            config: {
+                tension: (scale === bigScale && styleProps.scale.get() > 1) ? 1000 : 2000,
+                friction: 100
+            }
+        });
+    }, [isDragging, isResizing, isOverTrashcan, rectangleState.deleting, setStyleProps, color, state, styleProps.scale]);
 
     // Handle mouse/touch down/up for the rectangle
     useEffect(() => {
@@ -228,10 +273,9 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
             window.addEventListener('touchmove', handleMouseRectangle, { passive: false });
 
             setStartTime(performance.now());
-            setEditDistance(0);
         } else {
             if (dragged.current) {
-                if (!justCreated.current && !isResizing && performance.now() - startTime < 100 && editDistance <= 50 / zoom)
+                if (!zooming && !justCreated.current && !isResizing && performance.now() - startTime < 100)
                     setIsEditing(true);
 
                 setStartTime(null);
@@ -241,7 +285,7 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     trashcan.classList.remove('deleting');
                     document.body.style.cursor = 'default';
                     setRectangleState((prev) => ({ ...prev, deleting: true }));
-                    setOverTrashcanProps.start({ scale: 0.7, opacity: 0 });
+                    setStyleProps.start({ scale: 0.7, opacity: 0 });
 
                     setTimeout(() => {
                         setRectangles((prevRectangles) => prevRectangles.filter((r) => r.id !== rect.id));
@@ -270,8 +314,8 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                     } else if (showGhost && overlapping) {
                         if (!justCreated.current) setRectangleState((prev) => ({ ...prev, absolutePosition: rectangleState.initialDragPosition }));
                         else {
-                            const randomOffset = Math.random() < 0.5 ? Math.random() * -100 - 300 : Math.random() * 100 + 300;
-                            setRectangleState((prev) => ({ ...prev, absolutePosition: { x: rectangleState.absolutePosition.x + randomOffset, y: rectangleState.absolutePosition.y } }));
+                            const randomOffset = rectangleState.absolutePosition.x + rectangleWidth / 2 <= 0 ? (Math.random() * -150 - 150 - rectangleWidth) : (Math.random() * 150 + 150);
+                            setRectangleState((prev) => ({ ...prev, absolutePosition: { x: randomOffset, y: rectangleState.absolutePosition.y } }));
                         }
                     }
                 }
@@ -371,16 +415,6 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         };
     }, [isEditing, rect.id]);
 
-    // Focus on the textarea when editing
-    useEffect(() => {
-        if (isEditing && textareaRef.current) {
-            const textarea = textareaRef.current;
-            textarea.focus();
-            // Move the cursor to the end of the text
-            textarea.setSelectionRange(text.length, text.length);
-        }
-    }, [isEditing, text.length]);
-
     // Handle rectangle deletion when dragging over the trashcan
     useEffect(() => {
         if (!isOverTrashcan || !isDragging) return;
@@ -423,28 +457,60 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
         const ghostY = Math.min(maxY, Math.max(0, snappedY));
 
         return (
-            <animated.div
-                className={`rectangle ${isSmallRectangle && !isNote ? "small" : ""} rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isNote ? 'note' : ''}`}
-                style={{
-                    transform: rectangleProps.x.to((x) => {
-                        const relativePos = getRelativePosition({
-                            x: rectangleProps.x.get(),
-                            y: rectangleProps.y.get(),
-                        });
-                        return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${overTrashcanProps.scale.get()})`;
-                    }),
-                    height: rectangleProps.height,
-                    pointerEvents: 'all',
-                    position: 'absolute',
-                    backgroundColor: overTrashcanProps.backgroundColor,
-                    zIndex: isNote ? '99' : (isDragging ? '100' : '10'),
-                    visibility: isVisible ? 'visible' : 'hidden',
-                    opacity: overTrashcanProps.opacity,
-                }}
-            >
-                <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
+            <>
+                <animated.div
+                    className={`rectangle-outline size-${rect.size}`}
+                    style={{
+                        transform: rectangleProps.x.to((x) => {
+                            const relativePos = getRelativePosition({
+                                x: rectangleProps.x.get(),
+                                y: rectangleProps.y.get(),
+                            });
+                            return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${styleProps.scale.get()})`;
+                        }),
+                        height: isNote ? rectangleProps.height.to(h => h + 11) : rectangleProps.height,
+                        width: rectangleWidth,
+                        outline: `3px solid rgba(36,47,54, 1)`,
+                        border: `1px solid ${color}`,
+                        borderTopLeftRadius: isNote ? 0 : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderTopRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomLeftRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        position: 'absolute',
+                        zIndex: isNote ? '98' : (isDragging ? '99' : '9'),
+                        opacity: styleProps.opacity,
+                        visibility: isVisible ? 'visible' : 'hidden',
+                        pointerEvents: 'none',
+                    }}
+                />
+
+                <animated.div
+                    className={`rectangle ${isSmallRectangle && !isNote ? "small" : ""} rectangle-${rect.id} size-${rect.size} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isNote ? 'note' : ''}`}
+                    style={{
+                        transform: rectangleProps.x.to((x) => {
+                            const relativePos = getRelativePosition({
+                                x: rectangleProps.x.get(),
+                                y: rectangleProps.y.get(),
+                            });
+                            return `translate3d(${relativePos.x - xOffset.get()}px, ${relativePos.y}px, 0) rotate(${(x - rectangleState.absolutePosition.x - xOffset.get()) / 10}deg) scale(${styleProps.scale.get()})`;
+                        }),
+                        height: isNote ? rectangleProps.height.to(h => h + 11) : rectangleProps.height,
+                        pointerEvents: 'all',
+                        position: 'absolute',
+                        backgroundColor: styleProps.backgroundColor,
+                        boxShadow: styleProps.boxShadow,
+                        zIndex: isNote ? '99' : (isDragging || isEditing ? '100' : '10'),
+                        visibility: isVisible ? 'visible' : 'hidden',
+                        opacity: styleProps.opacity,
+                        borderTopLeftRadius: isNote ? 0 : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderTopRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 1) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomLeftRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        borderBottomRightRadius: isNote ? RECTANGLE_BORDER_RADIUS : (rect.border & 2) ? 0 : RECTANGLE_BORDER_RADIUS,
+                        outline: `3px solid rgba(36, 47, 54, ${(rectangleState.absolutePosition.x === centerSectionRef.current.style.x - rectangleWidth / 2 || isOverTrashcan) ? 0 : 0.75})`,
+                    }}
+                >
                     {!isNote && (
-                        <>
+                        <div className={`${isSmallRectangle ? "rectangle-header-small" : "rectangle-header"}`}>
                             {!isSmallRectangle ? (
                                 <>
                                     {icon}
@@ -464,45 +530,53 @@ const Rectangle = React.memo(({ viewportState, zoom, refresh, centerSectionRef, 
                                     </div>
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
-                </div>
-                {isEditing ? (
-                    <textarea
-                        className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        ref={textareaRef}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
-                        spellCheck="false"
-                        autoFocus
-                    />
-                ) : (
-                    <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`}> {text} </div>
-                )}
-                {/* Add the resize hint */}
-                <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="5 13 30 30"
-                    style={{ pointerEvents: 'none' }}>
-                    <path
-                        d="M 28 0 V 20 C 28 24 24 28 20 28 L 0 28"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        style={{ pointerEvents: 'none' }}
-                    />
-                </svg>
-            </animated.div>
+
+                    {isEditing ? (
+                        <textarea
+                            className={`UI ${isSmallRectangle && !isNote ? "rectangle-text-area-small" : "rectangle-text-area"} ${isNote ? 'note' : ''}`}
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            ref={textareaRef}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            spellCheck="false"
+                            autoFocus
+                            style={{ fontSize: 'medium', fontWeight: isNote ? '600' : '450' }}
+                            onFocus={(e) => {
+                                const length = e.target.value.length;
+                                e.target.setSelectionRange(length, length);
+                            }}
+                        />
+                    ) : (
+                        <div className={`${isSmallRectangle && !isNote ? "rectangle-text-small" : "rectangle-text"} ${isNote ? 'note' : ''}`} style={{ fontSize: 'medium', fontWeight: isNote ? '600' : '450' }}>
+                            {text}
+                        </div>
+                    )}
+                    {/* Add the resize hint */}
+                    <svg className={`resize-hint ${isDragging ? 'dragging' : 'hidden'} ${isDragging && isResizing ? 'resizing' : ''}`} viewBox="-5 -5 50 30"
+                        style={{ pointerEvents: 'none' }} transform="translate(-10, -8) scale(1.3)">
+                        <path
+                            d="M 41 0 V 3 C 41 12 34 19 24 19 L 0 19"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="7"
+                            strokeLinecap="round"
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    </svg>
+                </animated.div>
+            </>
         );
     };
 
     return (
         <div>
-            {renderRectangle(!refresh)}
-            {renderRectangle(refresh)}
+            {renderRectangle(true)}
+            {/* {renderRectangle(!refresh)} */}
             {!isNote && isDragging && showGhost && !isOverTrashcan && (
                 <div className={`ghost size-${size}`}
                     style={{
@@ -533,7 +607,8 @@ const areEqual = (prevProps, nextProps) => {
         prevProps.color === nextProps.color &&
         prevProps.size === nextProps.size &&
         prevProps.icon === nextProps.icon &&
-        prevProps.isNote === nextProps.isNote
+        prevProps.isNote === nextProps.isNote &&
+        prevProps.rect.border === nextProps.rect.border
     );
 };
 

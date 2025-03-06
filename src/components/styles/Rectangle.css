@@ -7,16 +7,45 @@
     position: absolute;
     top: 0;
     left: 0;
-    will-change: transform, opacity;
+    will-change: transform, opacity, border-radius;
     cursor: grab;
     overflow: hidden;
     overflow-wrap: anywhere;
+    transition: border-radius 0.2s ease-in-out;
+}
+
+.rectangle-outline {
+    width: 150px;
+    height: auto;
+    background-color: transparent;
+    border-radius: 1.5ch;
+    padding: 1ch;
+    position: absolute;
+    top: 0;
+    left: 0;
+    will-change: transform, opacity, border-radius;
+    cursor: grab;
+    overflow-wrap: anywhere;
+    transition: border-radius 0.2s ease-in-out;
+}
+
+.rectangle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right,
+            rgba(0, 0, 0, 0.2) 0%,
+            rgba(0, 0, 0, 0.01) 50%,
+            rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
 }
 
 .ghost {
     width: 150px;
     height: 50px;
-    border-radius: 1.5ch;
+    border-radius: 2ch;
     background-color: rgba(0, 0, 255, 0.3);
     position: absolute;
     pointer-events: none;
@@ -40,11 +69,11 @@
 }
 
 .resize-hint.dragging {
-    opacity: 0.2;
+    opacity: 0.4;
 }
 
 .resize-hint.dragging.resizing {
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .note {
@@ -58,12 +87,22 @@
 
 .rectangle.size-1,
 .ghost.size-1 {
-    width: 150px;
+    width: 375px;
 }
 
 .rectangle.size-2,
 .ghost.size-2 {
-    width: 300px;
+    width: 275px;
+}
+
+.rectangle.size-3,
+.ghost.size-3 {
+    width: 200px;
+}
+
+.rectangle.size-4,
+.ghost.size-4 {
+    width: 150px;
 }
 
 .rectangle.dragging {
@@ -77,7 +116,7 @@
 .rectangle-header {
     pointer-events: none;
     font-size: 10px;
-    color: white;
+    color: rgb(255, 255, 255);
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -86,6 +125,8 @@
 .rectangle-text {
     width: 100%;
     height: calc(100% - 30px);
+    font-size: medium;
+    font-weight: 450;
     pointer-events: none;
     color: white;
     display: flex;
@@ -104,6 +145,8 @@
 .rectangle-text-area {
     width: 100%;
     height: calc(100% - 30px);
+    font-size: medium;
+    font-weight: 450;
     background-color: transparent;
     border: none;
     color: white;
@@ -139,6 +182,8 @@
 .rectangle-text-small {
     width: calc(100% - 40px);
     height: 100%;
+    font-size: medium;
+    font-weight: 450;
     pointer-events: none;
     color: white;
     display: flex;
@@ -158,6 +203,8 @@
 .rectangle-text-area-small {
     width: calc(100% - 40px);
     height: 100%;
+    font-size: medium;
+    font-weight: 450;
     background-color: transparent;
     border: none;
     color: white;
@@ -178,13 +225,14 @@
 }
 
 .rectangle-header-text {
-    color: white;
+    color: rgba(255, 255, 255, 0.75);
     text-align: left;
     white-space: nowrap;
     padding-left: 0.5ch;
     padding-top: 0.1rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 1rem;
+    font-weight: 600;
+    text-rendering: optimizeLegibility;
 }
 
 .rectangle-icon-small {
@@ -199,11 +247,11 @@
 }
 
 .rectangle-time {
-    font-size: 0.75rem;
-    color: white;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
     text-align: left;
     white-space: nowrap;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;

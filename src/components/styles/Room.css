@@ -2,13 +2,27 @@
     width: 100px;
     height: var(--center-section-height, 5760px);
     background-color: rgba(0, 0, 0, 0.1);
+    border: 3px solid rgba(0, 0, 0, 0.1);
     position: absolute;
-    border-radius: 1.5ch;
+    border-radius: 2ch;
+}
+
+.center-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right,
+            rgba(0, 0, 0, 0.06) 0%,
+            rgba(0, 0, 0, 0.05) 50%,
+            rgba(255, 255, 255, 0.03) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
 }
 
 .date-labels {
     position: absolute;
-    left: -300px;
+    left: -350px;
     top: 0;
     width: 200px;
     text-align: right;
@@ -19,4 +33,12 @@
     position: absolute;
     font-size: 40px;
     color: black;
+}
+
+.hour-label {
+    position: absolute;
+    font-size: 25px;
+    right: 70px;
+    color: black;
+    opacity: 0.25;
 }

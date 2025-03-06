@@ -10,6 +10,7 @@
     animation-duration: 0.4s;
     animation-fill-mode: forwards;
     width: 3ch;
+    z-index: 10002 !important;
     pointer-events: none;
     height: calc(1.2* (2*(25px + 2vw) + 2*(7.5px + 0.75vw)));
 }
@@ -114,20 +115,46 @@
 }
 
 .switch-buttons-container {
-    width: 10.8ch;
+    width: fit-content;
     box-sizing: border-box;
     background-color: #e3e3e3;
     border-top-right-radius: 10ch;
     border-bottom-right-radius: 10ch;
     padding: 0.1ch;
-    padding-left: 3.4ch;
+    padding-left: 6.4ch;
     padding-right: 0.1ch;
     margin-top: 1.5ch;
     pointer-events: none;
     font-size: calc(0.75vh + 1em);
     display: flex;
     flex-direction: row;
-    transform: translateX(-3ch);
+    transform: translateX(-6ch);
+    outline: 2px solid rgba(36, 47, 54, 1);
+    box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.3);
+}
+
+.switch-buttons-container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to left,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.1) 70%,
+            rgba(0, 0, 0, 0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
+}
+
+.top-right-container {
+    position: absolute;
+    z-index: 10002 !important;
+    top: calc(2.3vh + 0.5rem);
+    right: calc(2.3vh + 0.5rem);
+}
+
+.top-right-container.hide {
+    z-index: 999 !important;
 }
 
 .bottom-left-container {
@@ -136,34 +163,53 @@
     left: calc(2.3vh + 0.5rem);
     display: flex;
     flex-direction: row;
+    z-index: 999;
 }
 
 .bottom-right-container {
     position: absolute;
     bottom: calc(2.3vh + 0.5rem);
     right: calc(2.3vh + 0.5rem);
+    z-index: 999;
 }
 
 .rectangle-button {
-    font-size: calc(0.75vh + 1em);
-    width: 12ch;
+    font-size: clamp(1.1rem, 1vw + 1.5vh, 1.35rem);
+    font-weight: 400;
+    width: 16ch;
+    display: none;
     background-color: #4CAF50;
     border: none;
     color: white;
     padding: calc(0.2em);
-    padding-left: 4ch;
+    padding-left: 7ch;
     text-align: center;
     text-decoration: none;
     display: flex;
     flex-direction: row;
+    align-content: center;
     margin-bottom: 7px;
     cursor: pointer;
-    border-top-right-radius: 1ch;
-    border-bottom-right-radius: 1ch;
+    border-radius: 10ch;
     transition: transform 0.2s ease-out;
     animation-duration: 0.5s;
     animation-fill-mode: forwards;
     transform: translateX(-3ch);
+    box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.3);
+    outline: 2px solid rgba(36, 47, 54, 1);
+}
+
+.rectangle-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to left,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.1) 80%,
+            rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
 }
 
 .rectangle-button-out {
@@ -180,11 +226,11 @@
 
 @keyframes buttonOut {
     0% {
-        transform: translateX(-3ch);
+        transform: translateX(-6ch);
     }
 
     30% {
-        transform: translateX(-1ch);
+        transform: translateX(-4ch);
     }
 
     100% {
@@ -202,28 +248,34 @@
     }
 
     65% {
-        transform: translateX(-2ch);
+        transform: translateX(-5ch);
     }
 
     100% {
-        transform: translateX(-3ch);
+        transform: translateX(-6ch);
     }
 }
 
 .switch-button {
     background-color: #41444B;
-    width: 2ch;
-    height: 2ch;
+    width: clamp(1.4rem, 1.15vw + 1.65vh, 1.7rem);
+    height: clamp(1.4rem, 1.15vw + 1.65vh, 1.7rem);
     border: none;
     color: white;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     font: inherit;
-    margin: 0.2ch;
+    margin: clamp(0.1rem, 1.15vw + 1.65vh, 0.2rem);
     cursor: pointer;
     border-radius: 5ch;
+    align-items: center;
+    justify-content: center;
+    display: flex;
     transition: background-color 0.1s, transform 0.1s;
+    outline: 1.5px solid rgba(36, 47, 54, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .note-button {
@@ -235,14 +287,102 @@
     background-color: #41444B;
     border: none;
     color: white;
-    width: calc(0.3vw + 3em);
-    height: calc(0.3vw + 3em);
+    width: clamp(2.1rem, 2.5vw + 2.5vh, 2.5rem);
+    height: clamp(2.1rem, 2.5vw + 2.5vh, 2.5rem);
     cursor: pointer;
     border-radius: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.1s, transform 0.1s;
+    box-shadow: -4px 4px 5px rgba(0, 0, 0, 0.2);
+    outline: 2px solid rgba(36, 47, 54, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.info-button {
+    background-color: rgba(36, 47, 54, 1);
+    width: clamp(1.4rem, 2.5vw + 2.5vh - 0.5rem, 1.6rem);
+    height: clamp(1.4rem, 2.5vw + 2.5vh - 0.5rem, 1.6rem);
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+    box-shadow: -3px 3px 4px rgba(0, 0, 0, 0.2);
+    outline: 2px solid rgba(36, 47, 54, 1);
+    position: relative;
+    overflow: hidden;
+    z-index: 9000;
+    will-change: transform;
+}
+
+.info-button-i {
+    font-weight: 700;
+    font-size: clamp(1.1rem, 2vw + 2vh, 1.3rem);
+    pointer-events: none;
+}
+
+.info-button:hover,
+.info-button.hover {
+    background-color: rgb(96, 109, 116);
+    transform: scale(1.1);
+    box-shadow: -4px 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.info-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
+    border-radius: 100%;
+    pointer-events: none;
+}
+
+.info-button.selected {
+    background-color: #69BC29;
+    z-index: 10002;
+    transform: scale(1.1);
+}
+
+.info-overlay {
+    position: fixed;
+    top: -50vh;
+    left: -50vw;
+    width: 200vw;
+    height: 200vh;
+    background-color: black;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease-in;
+    z-index: 10001;
+}
+
+.info-overlay.visible {
+    opacity: 0.5;
+    pointer-events: all;
+}
+
+.view-button::before,
+.lock-button::before,
+.trashcan::before,
+.switch-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
+    border-radius: 100%;
+    pointer-events: none;
 }
 
 .view-button:hover,
@@ -258,7 +398,7 @@
 .view-button.hidden,
 .lock-button.unlocked,
 .switch-button.selected {
-    background-color: #848484;
+    background-color: #9a9a9a;
 }
 
 .view-button {
@@ -269,13 +409,17 @@
     background-color: #cc1c1c;
     border: none;
     color: white;
-    width: calc(0.3vw + 3.5em);
-    height: calc(0.3vw + 3.5em);
+    width: clamp(2.9rem, 2.5vw + 2.5vh + 0.8rem, 3.5rem);
+    height: clamp(2.9rem, 2.5vw + 2.5vh + 0.8rem, 3.5rem);
     border-radius: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.1s, transform 0.1s;
+    outline: 2px solid rgba(36, 47, 54, 1);
+    box-shadow: -4px 4px 5px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
 .trashcan.deleting {
@@ -284,19 +428,28 @@
 }
 
 .rectangle-button svg {
-    width: calc(0.75vh + 0.7em);
-    height: calc(0.75vh + 0.7em);
+    width: clamp(1.25rem, 1.1vw + 1.6vh, 1.55rem);
+    height: clamp(1.25rem, 1.1vw + 1.6vh, 1.55rem);
+    margin-left: 0.3ch;
 }
 
 .view-button svg,
 .lock-button svg {
-    width: calc(0.3vw + 1.2em);
-    height: calc(0.3vw + 1.2em);
+    width: clamp(1.7rem, 2vw + 2vh, 2rem);
+    height: clamp(1.7rem, 2vw + 2vh, 2rem);
+    z-index: 1;
 }
 
 .trashcan svg {
-    width: calc(0.3vw + 1.5em);
-    height: calc(0.3vw + 1.5em);
+    width: clamp(2.2rem, 2.5vw + 2.5vh, 2.65rem);
+    height: clamp(2.2rem, 2.5vw + 2.5vh, 2.65rem);
+    z-index: 1;
+}
+
+.switch-button svg {
+    width: clamp(1.15rem, 1.15vw + 1.65vh - 0.25rem, 1.45rem);
+    height: clamp(1.15rem, 1.15vw + 1.65vh - 0.25rem, 1.45rem);
+    z-index: 1;
 }
 
 .ui-container {
